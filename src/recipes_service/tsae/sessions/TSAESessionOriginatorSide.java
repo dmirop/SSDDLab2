@@ -109,8 +109,8 @@ public class TSAESessionOriginatorSide extends TimerTask{ //TimerTask es clase q
 			/* ¿Cómo se asignan valores a las variables localSummary y localAck? La información está en serverData y las funciones en ServerData. 
 			 * Habría que hacer:
 			 * 
-			 *  localSummary = serverData.getSummary();
-			 *  localAck= serverData.getAck(); En principio el Ack estará vacío, la clase TimestampMatrix se ha de acabar de programar, 
+			 *  localSummary = this.serverData.getSummary();
+			 *  localAck= this.serverData.getAck(); En principio el Ack estará vacío, la clase TimestampMatrix se ha de acabar de programar, 
 			 *  pero no parece relevante para la Phase2: el ACK se usa con el Purge, que no hacemos aquí
 			 *  
 			 */
@@ -167,6 +167,7 @@ public class TSAESessionOriginatorSide extends TimerTask{ //TimerTask es clase q
 				if (msg.type() == MsgType.END_TSAE){
 					// 
 				}
+				// ¿Actualizar summary con this.summary y ack con this.ack? Lo mismo con partnerside
 
 			}			
 			socket.close();
