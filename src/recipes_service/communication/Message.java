@@ -44,5 +44,6 @@ public abstract class Message implements Serializable{
 		return session_number;
 	}
 	
-	public abstract MsgType type();
+	public abstract MsgType type();/* Hay que implementarla? Una vía similar a MessageAErequest sería:
+		return MsgType.OPERATION; ¿compatible con msg.type() de la TSAESessionPartnerSide? */
 }
