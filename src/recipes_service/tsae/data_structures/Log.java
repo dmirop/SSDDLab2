@@ -141,6 +141,7 @@ public class Log implements Serializable {
 	 *            ackSummary.
 	 */
 	public void purgeLog(TimestampMatrix ack) {
+		//TODO: PRACTICA 2
 	}
 
 	/**

@@ -56,8 +56,9 @@ public class TimestampMatrix implements Serializable{
 	 * @return the timestamp vector of node in this timestamp matrix
 	 */
 	TimestampVector getTimestampVector(String node){
+		//TODO: PRACTICA 2 Phase 3
 		
-		// return generated automatically. Remove it when implementing your solution 
+		// return generated automatically. Remove it when implementing your solution
 		return null;
 	}
 	
@@ -66,6 +67,7 @@ public class TimestampMatrix implements Serializable{
 	 * @param tsMatrix
 	 */
 	public void updateMax(TimestampMatrix tsMatrix){
+		//TODO: PRACTICA 2 Phase 3
 	}
 	
 	/**
@@ -74,6 +76,7 @@ public class TimestampMatrix implements Serializable{
 	 * @param tsVector
 	 */
 	public void update(String node, TimestampVector tsVector){
+		//TODO: PRACTICA 2 Phase 3
 	}
 	
 	/**
@@ -82,6 +85,7 @@ public class TimestampMatrix implements Serializable{
 	 * the timestamp known by all participants
 	 */
 	public TimestampVector minTimestampVector(){
+		//TODO: PRACTICA 2 Phase 3
 		
 		// return generated automatically. Remove it when implementing your solution 
 		return null;
@@ -91,6 +95,7 @@ public class TimestampMatrix implements Serializable{
 	 * clone
 	 */
 	public TimestampMatrix clone(){
+		//TODO: PRACTICA 2 Phase 3
 		
 		// return generated automatically. Remove it when implementing your solution 
 		return null;
@@ -101,6 +106,7 @@ public class TimestampMatrix implements Serializable{
 	 */
 	@Override
 	public boolean equals(Object obj) {
+		//TODO: PRACTICA 2 Phase 3
 		
 		// return generated automatically. Remove it when implementing your solution 
 		return false;

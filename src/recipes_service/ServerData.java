@@ -215,6 +215,24 @@ public class ServerData {
 	}
 	
 	// ******************************
+	// *** methods to manipulate data
+	// ******************************
+	
+	public synchronized boolean addLog(Operation operation){
+		return this.log.add(operation);
+	}
+	
+	public synchronized void updateSummary(TimestampVector tsVector){
+		this.summary.updateMax(tsVector);
+	}
+	
+	public synchronized void execOperation(AddOperation addOp){
+		if (this.log.add(addOp)){
+			this.recipes.add(addOp.getRecipe());
+		}
+	}
+	
+	// ******************************
 	// *** other
 	// ******************************
 	

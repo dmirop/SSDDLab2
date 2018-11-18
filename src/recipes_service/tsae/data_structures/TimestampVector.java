@@ -83,6 +83,20 @@ public class TimestampVector implements Serializable {
 	 *            (a timestamp vector)
 	 */
 	public void updateMax(TimestampVector tsVector) {
+		Enumeration<String> ids = this.timestampVector.keys();
+		while(ids.hasMoreElements()){
+			String id = this.timestampVector.keys().nextElement();
+			
+			Timestamp newTs = tsVector.getLast(id);
+			
+			long tsDiff = this.getLast(id).compare(newTs);
+			
+			if (tsDiff > 0){
+				this.updateTimestamp(newTs);
+			}
+			
+		}
+		
 	}
 
 	/**
