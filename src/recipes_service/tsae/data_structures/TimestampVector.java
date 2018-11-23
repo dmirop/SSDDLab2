@@ -66,12 +66,12 @@ public class TimestampVector implements Serializable {
 	 * @param timestamp
 	 */
 	public void updateTimestamp(Timestamp timestamp) {
-		lsim.log(Level.TRACE, "Updating the TimestampVectorInserting with the timestamp: " + timestamp);
+		//lsim.log(Level.TRACE, "Updating the TimestampVectorInserting with the timestamp: " + timestamp);
 
 		if (timestamp == null) {
-			lsim.log(Level.ERROR, "Trying to update the vector with a null timestamp");
+			//lsim.log(Level.ERROR, "Trying to update the vector with a null timestamp");
 		} else {
-			lsim.log(Level.DEBUG, "Timestamp updated for host: " + timestamp.getHostid());
+			//lsim.log(Level.DEBUG, "Timestamp updated for host: " + timestamp.getHostid());
 			this.timestampVector.put(timestamp.getHostid(), timestamp);
 		}
 	}
@@ -84,23 +84,26 @@ public class TimestampVector implements Serializable {
 	 */
 	public void updateMax(TimestampVector tsVector) {
 		if (tsVector == null){
-			lsim.log(Level.ERROR, "Trying to update a null vector");
+			//lsim.log(Level.ERROR, "Trying to update a null vector");
 			return;
 		}
 		
 		// Create a list of participants extracting it from this timestampVector
-		List<String> participants = new Vector<String>(this.timestampVector.keySet());
 		
-		for (String node:participants){
+		for (String node : this.timestampVector.keySet()){
 			Timestamp newTs = tsVector.getLast(node);
 			
+			if (newTs == null){
+				continue;
+			} else {	
 			long tsDiff = this.getLast(node).compare(newTs);
 			
-			if (tsDiff >0){
+			if (tsDiff < 0){
 				this.updateTimestamp(newTs);
 			}
 		}
 		
+	}
 	}
 
 	/**
@@ -111,7 +114,7 @@ public class TimestampVector implements Serializable {
 	public Timestamp getLast(String node) {
 
 		if (node == null) {
-			lsim.log(Level.ERROR, "Trying to retrieve the timestamp of a null node");
+			//lsim.log(Level.ERROR, "Trying to retrieve the timestamp of a null node");
 			return null;
 		} else {
 			return this.timestampVector.get(node);

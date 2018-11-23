@@ -31,6 +31,7 @@ import recipes_service.communication.Host;
 import recipes_service.communication.Hosts;
 import recipes_service.data.AddOperation;
 import recipes_service.data.Operation;
+import recipes_service.data.OperationType;
 import recipes_service.data.Recipe;
 import recipes_service.data.Recipes;
 import recipes_service.tsae.data_structures.Log;
@@ -218,17 +219,17 @@ public class ServerData {
 	// *** methods to manipulate data
 	// ******************************
 	
-	public synchronized boolean addLog(Operation operation){
-		return this.log.add(operation);
-	}
 	
 	public synchronized void updateSummary(TimestampVector tsVector){
 		this.summary.updateMax(tsVector);
 	}
 	
-	public synchronized void execOperation(AddOperation addOp){
-		if (this.log.add(addOp)){
-			this.recipes.add(addOp.getRecipe());
+	public synchronized void sendOperation(Operation receivedOp){
+		if (this.log.add(receivedOp)){
+			if (receivedOp.getType() == OperationType.ADD){
+				this.recipes.add(((AddOperation)receivedOp).getRecipe());
+			}
+			
 		}
 	}
 	

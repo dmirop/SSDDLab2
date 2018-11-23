@@ -66,7 +66,7 @@ public class Log implements Serializable {
 	 * @return true if op is inserted, false otherwise.
 	 */
 	public boolean add(Operation op) {
-		lsim.log(Level.TRACE, "Inserting into Log the operation: " + op);
+		//lsim.log(Level.TRACE, "Inserting into Log the operation: " + op);
 
 		// Get the HostId from the operation to insert
 		Timestamp opTimestamp = op.getTimestamp();
@@ -92,11 +92,11 @@ public class Log implements Serializable {
 		long tsDiff = opTimestamp.compare(lastTimestampHostId);
 
 		if (tsDiff > 0 || (lastTimestampHostId == null && tsDiff == 0)) {
-			lsim.log(Level.DEBUG, "Inserting operation: " + op);
+			//lsim.log(Level.DEBUG, "Inserting operation: " + op);
 			this.log.get(opHostId).add(op);
 			return true;
 		} else {
-			lsim.log(Level.ERROR, "Insertion of operations " + op + " failed. Received older operation");
+			//lsim.log(Level.ERROR, "Insertion of operations " + op + " failed. Received older operation");
 			return false;
 		}
 	}
