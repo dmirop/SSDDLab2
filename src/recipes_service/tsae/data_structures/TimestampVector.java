@@ -83,18 +83,22 @@ public class TimestampVector implements Serializable {
 	 *            (a timestamp vector)
 	 */
 	public void updateMax(TimestampVector tsVector) {
-		Enumeration<String> ids = this.timestampVector.keys();
-		while(ids.hasMoreElements()){
-			String id = this.timestampVector.keys().nextElement();
+		if (tsVector == null){
+			lsim.log(Level.ERROR, "Trying to update a null vector");
+			return;
+		}
+		
+		// Create a list of participants extracting it from this timestampVector
+		List<String> participants = new Vector<String>(this.timestampVector.keySet());
+		
+		for (String node:participants){
+			Timestamp newTs = tsVector.getLast(node);
 			
-			Timestamp newTs = tsVector.getLast(id);
+			long tsDiff = this.getLast(node).compare(newTs);
 			
-			long tsDiff = this.getLast(id).compare(newTs);
-			
-			if (tsDiff > 0){
+			if (tsDiff >0){
 				this.updateTimestamp(newTs);
 			}
-			
 		}
 		
 	}

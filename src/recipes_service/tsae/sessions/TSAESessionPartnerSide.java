@@ -117,7 +117,7 @@ public class TSAESessionPartnerSide extends Thread{
 				
 				while (msg.type() == MsgType.OPERATION){
 					Operation op = ((MessageOperation)msg).getOperation();
-					origin_operations.add(op)
+					origin_operations.add(op);
 					//this.serverData.addLog(op);
 					msg = (Message) in.readObject();
 					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
