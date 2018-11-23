@@ -67,7 +67,7 @@ public class TSAESessionOriginatorSide extends TimerTask{
 	 * Implementation of the TimeStamped Anti-Entropy protocol
 	 */
 	public void run(){
-		sessionWithN(serverData.getNumberSessions());
+		sessionWithN(serverData.getNumberSessions()); //por defecto sesión con un solo partner
 	}
 
 	/**
@@ -78,9 +78,9 @@ public class TSAESessionOriginatorSide extends TimerTask{
 	public void sessionWithN(int num){
 		if(!SimulationData.getInstance().isConnected())
 			return;
-		List<Host> partnersTSAEsession= serverData.getRandomPartners(num);
+		List<Host> partnersTSAEsession= serverData.getRandomPartners(num); //por defecto solo coge uno
 		Host n;
-		for(int i=0; i<partnersTSAEsession.size(); i++){
+		for(int i=0; i<partnersTSAEsession.size(); i++){ //bucle sin sentido si solo es con un único partner
 			n=partnersTSAEsession.get(i);
 			sessionTSAE(n);
 		}
@@ -108,10 +108,10 @@ public class TSAESessionOriginatorSide extends TimerTask{
 			// Send to partner: local's summary and ack
 			Message	msg = new MessageAErequest(localSummary, localAck);
 			msg.setSessionNumber(current_session_number);
-            out.writeObject(msg);
+            		out.writeObject(msg);
 			lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] sent message: "+msg);
 
-            // receive operations from partner
+            		// receive operations from partner
 			msg = (Message) in.readObject();
 			lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
 			while (msg.type() == MsgType.OPERATION){
