@@ -77,10 +77,18 @@ public class TSAESessionPartnerSide extends Thread{
 			lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] TSAE session");
 			lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 			if (msg.type() == MsgType.AE_REQUEST){
-				// ...
-				
-	            // send operations
-					// ...
+				/* 
+				 * Copia local de summary y ack para evitar problemas de concurrencia
+				 * TimestampVector localSummary = msg.getSummary();
+				 * TimestampMatrix localAck = msg.getAck();
+				 * 
+				 * Ahora hay que comparar los summaries para ver qué se tiene de más que el Originator
+				 * 	Conseguir lista de todos los participants
+				 * 	Hacer un FOR que compare para cada Server el summary del Originator con el summary del Partner, comprobar si 
+				 *	la función log.listNewer nos ahorra la faena
+				 * 	Si el Summary del Partner > Summary del Originator, enviar las operaciones al Originator, construyendo el msg
+				 *
+				 * send operations */
 					msg.setSessionNumber(current_session_number);
 					out.writeObject(msg);
 					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
@@ -89,16 +97,30 @@ public class TSAESessionPartnerSide extends Thread{
 				// send to originator: local's summary and ack
 				TimestampVector localSummary = null;
 				TimestampMatrix localAck = null;
+				// PBG
+				/* TimestampVector localSummary = null;
+				TimestampMatrix localAck = null; */
+				// PBG
+				/* TimestampVector localSummary = serverData.getSummary();
+				TimestampMatrix localAck = serverData.getAck(); */
 				msg = new MessageAErequest(localSummary, localAck);
 				msg.setSessionNumber(current_session_number);
-	 	        out.writeObject(msg);
+	 	        	out.writeObject(msg);
 				lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
 
 	            // receive operations
 				msg = (Message) in.readObject();
 				lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 				while (msg.type() == MsgType.OPERATION){
-					// ...
+					/* Se ha de implementar función type() y no sé si se tiene que cambiar OPERATION por otro tag o ya va bien ese */
+					/* Implementar update del log con los nuevos mensajes que se van recibiendo del Originator de la misma manera que 
+					 * en la práctica 1. En principio algo del estilo:
+					 * 
+					 *  	this.log.add(op);
+					 *	this.summary.updateTimestamp(timestamp);
+					 *	this.recipes.add(rcpe) o this.recipes.remove(rcpe) en función de la operación;
+					 *  
+					 */
 					msg = (Message) in.readObject();
 					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 				}
@@ -108,10 +130,10 @@ public class TSAESessionPartnerSide extends Thread{
 					// send and "end of TSAE session" message
 					msg = new MessageEndTSAE();
 					msg.setSessionNumber(current_session_number);
-		            out.writeObject(msg);					
+		            		out.writeObject(msg);					
 					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
 				}
-				
+				/* Estaría bien imprimir por pantalla los summaries de Originator y Partner para comprobar que se han sincronizado */
 			}
 			socket.close();		
 		} catch (ClassNotFoundException e) {
