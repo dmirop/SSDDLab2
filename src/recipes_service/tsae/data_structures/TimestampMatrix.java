@@ -69,6 +69,14 @@ public class TimestampMatrix implements Serializable{
 	 */
 	public void updateMax(TimestampMatrix tsMatrix){
 		//TODO: PRACTICA 2 Phase 3
+		/* 
+		for (Iterator<String> it = participants.iterator(); it.hasNext(); ){
+			tsVector = timestampMatrix.getTimestampVector(it.next());
+			tsVectorResult.updateMax(tsVector);
+			timestampMatrix.update(it.next(), tsVector);
+		}
+		
+		*/
 	}
 	
 	/**
@@ -78,7 +86,7 @@ public class TimestampMatrix implements Serializable{
 	 */
 	public void update(String node, TimestampVector tsVector){
 		//TODO: PRACTICA 2 Phase 3
-		
+		// timestampMatrix.put(node, tsVector);
 	}
 	
 	/**
@@ -107,6 +115,9 @@ public class TimestampMatrix implements Serializable{
 	 */
 	public TimestampMatrix clone(){
 		//TODO: PRACTICA 2 Phase 3
+		/* TimestampMatrix tsClone;
+		tsClone=timestampMatrix;
+		return tsClone; */
 		
 		// return generated automatically. Remove it when implementing your solution 
 		return null;
