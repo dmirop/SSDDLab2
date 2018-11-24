@@ -131,6 +131,17 @@ public class TimestampVector implements Serializable {
 	 *            (timestamp vector)
 	 */
 	public void mergeMin(TimestampVector tsVector) {
+		/* PBG
+		private long comparison;
+		private TimestampVector result;
+		for (Iterator<String> it = participants.iterator(); it.hasNext();) {
+			String id = it.next();
+			timestamp.compare(tsVector.get(id));
+			if(comparison<0) result.put(id, tsVector.get(id));
+			else result.put(id, timestamp.get(id);
+		} 
+		return result;
+		*/
 	}
 
 	/**
