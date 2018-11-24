@@ -105,6 +105,7 @@ public class TSAESessionOriginatorSide extends TimerTask{
 			TimestampVector localSummary = null;
 			TimestampMatrix localAck = null;
 			
+			// Use synchronized so no other nodes can interfere
 			synchronized (this.serverData){
 				localSummary = this.serverData.getSummary().clone();
 				localAck =this.serverData.getAck().clone();				
@@ -115,13 +116,13 @@ public class TSAESessionOriginatorSide extends TimerTask{
 			msg.setSessionNumber(current_session_number);
             out.writeObject(msg);
 			//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] sent message: "+msg)
-            
-            
+          
 
             // receive operations from partner
 			msg = (Message) in.readObject();
 			//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
 			
+			//Store the partner operations in a List to process later
 			List<MessageOperation> partner_operations = new Vector<MessageOperation>();
 			while (msg.type() == MsgType.OPERATION){
 				partner_operations.add((MessageOperation)msg);
@@ -133,6 +134,7 @@ public class TSAESessionOriginatorSide extends TimerTask{
             // receive partner's summary and ack
 			if (msg.type() == MsgType.AE_REQUEST){
 				
+				// Store partner's Summary and Ack
 				TimestampVector partnerSummary = ((MessageAErequest)msg).getSummary();
 				TimestampMatrix partnerAck = ((MessageAErequest)msg).getAck();
 				
@@ -158,9 +160,11 @@ public class TSAESessionOriginatorSide extends TimerTask{
 				msg = (Message) in.readObject();
 				//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
 				if (msg.type() == MsgType.END_TSAE){
+					
+					// Send Operations to ServerData and update the data structures
 					synchronized(this.serverData){
 						for (MessageOperation partnerOp : partner_operations){
-							this.serverData.sendOperation(partnerOp.getOperation());
+							this.serverData.execOperation(partnerOp.getOperation());
 						}
 						this.serverData.updateSummary(partnerSummary);
 					}

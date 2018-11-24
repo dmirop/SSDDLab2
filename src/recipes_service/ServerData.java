@@ -219,12 +219,19 @@ public class ServerData {
 	// *** methods to manipulate data
 	// ******************************
 	
-	
+	/**
+	 * Updates the summary of the server data with the TimestampVector sent by a node
+	 * @param tsVector TimestampVector from the node
+	 */
 	public synchronized void updateSummary(TimestampVector tsVector){
 		this.summary.updateMax(tsVector);
 	}
 	
-	public synchronized void sendOperation(Operation receivedOp){
+	/**
+	 * Receives an operation from a node, logs it and executes it
+	 * @param receivedOp
+	 */
+	public synchronized void execOperation(Operation receivedOp){
 		if (this.log.add(receivedOp)){
 			if (receivedOp.getType() == OperationType.ADD){
 				this.recipes.add(((AddOperation)receivedOp).getRecipe());

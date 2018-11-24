@@ -78,15 +78,16 @@ public class TSAESessionPartnerSide extends Thread{
 			//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 			if (msg.type() == MsgType.AE_REQUEST){
 				
-
+				//Save the Summary and Ack received from the Originator node
 				TimestampVector originatorSummary = ((MessageAErequest)msg).getSummary();
 				TimestampMatrix originatorAck = ((MessageAErequest)msg).getAck();
 
-				
+				//Get the list of pending operations checking the received Summary
 				List<Operation> pendingOps = this.serverData.getLog().listNewer(originatorSummary);
 				
 				Iterator<Operation> pendingOpsIterator = pendingOps.iterator();
 				
+				//Send the pending operations
 				while (pendingOpsIterator.hasNext()){
 					msg = new MessageOperation(pendingOpsIterator.next());
 					msg.setSessionNumber(current_session_number);
@@ -99,11 +100,13 @@ public class TSAESessionPartnerSide extends Thread{
 				TimestampVector localSummary = null;
 				TimestampMatrix localAck = null;
 				
+				// Using synchronized to make sure no other node interferes
 				synchronized(serverData){					
 					localSummary = this.serverData.getSummary().clone();
 					localAck = this.serverData.getAck().clone();
 				}
-					
+				
+				// After sending the pending operations, it is requested an AE to the originator
 				msg = new MessageAErequest(localSummary, localAck);
 				msg.setSessionNumber(current_session_number);
 	 	        out.writeObject(msg);
@@ -113,6 +116,8 @@ public class TSAESessionPartnerSide extends Thread{
 				msg = (Message) in.readObject();
 				//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 				
+				
+				// Store operations in a List to take care of them later
 				List<MessageOperation> origin_operations = new Vector<MessageOperation>();
 				
 				while (msg.type() == MsgType.OPERATION){
@@ -129,9 +134,11 @@ public class TSAESessionPartnerSide extends Thread{
 					msg.setSessionNumber(current_session_number);
 		            out.writeObject(msg);					
 					//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
+		            
+		            // Using synchronized to send the operations and update the data structures
 		            synchronized(this.serverData){
 		            	for (MessageOperation partnerOp : origin_operations){
-							this.serverData.sendOperation(partnerOp.getOperation());
+							this.serverData.execOperation(partnerOp.getOperation());
 						}
 						this.serverData.updateSummary(originatorSummary);
 		            }
