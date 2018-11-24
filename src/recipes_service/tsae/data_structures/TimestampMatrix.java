@@ -57,9 +57,10 @@ public class TimestampMatrix implements Serializable{
 	 */
 	TimestampVector getTimestampVector(String node){
 		//TODO: PRACTICA 2 Phase 3
-		
-		// return generated automatically. Remove it when implementing your solution
-		return null;
+		// PBG
+		// return timestampMatrix.get(node);
+		/* return generated automatically. Remove it when implementing your solution
+		return null; */
 	}
 	
 	/**
@@ -77,6 +78,7 @@ public class TimestampMatrix implements Serializable{
 	 */
 	public void update(String node, TimestampVector tsVector){
 		//TODO: PRACTICA 2 Phase 3
+		
 	}
 	
 	/**
@@ -86,7 +88,16 @@ public class TimestampMatrix implements Serializable{
 	 */
 	public TimestampVector minTimestampVector(){
 		//TODO: PRACTICA 2 Phase 3
-		
+		/* Algo del siguiente estilo:
+		   TimestampVector tsVector, tsVectorResult=NULL;
+		   Timestamp minTs;
+		   private long seqNumber;
+		   for (Iterator<String> it = participants.iterator(); it.hasNext(); ){
+			tsVector = timestampMatrix.getTimestampVector(it.next());
+			tsVectorResult.mergeMin(tsVector);
+		   }
+		   return (tsVector);
+		*/
 		// return generated automatically. Remove it when implementing your solution 
 		return null;
 	}
@@ -106,17 +117,10 @@ public class TimestampMatrix implements Serializable{
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj){
-			return true;
-		} else if (obj == null){
-			return false;			
-		} else if (getClass() != obj.getClass()){
-			return false;
-		}
+		//TODO: PRACTICA 2 Phase 3
 		
-		TimestampMatrix other = (TimestampMatrix) obj;
-		
-		return this.timestampMatrix.equals(other.timestampMatrix);
+		// return generated automatically. Remove it when implementing your solution 
+		return false;
 	}
 
 	
