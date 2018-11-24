@@ -31,7 +31,6 @@ import recipes_service.communication.Host;
 import recipes_service.communication.Hosts;
 import recipes_service.data.AddOperation;
 import recipes_service.data.Operation;
-import recipes_service.data.OperationType;
 import recipes_service.data.Recipe;
 import recipes_service.data.Recipes;
 import recipes_service.tsae.data_structures.Log;
@@ -152,6 +151,9 @@ public class ServerData {
 
 		this.log.add(op);
 		this.summary.updateTimestamp(timestamp);
+		
+		/* ¿añadir this.ack.update(timestamp.getHostid(), this.summary)? */
+		
 		this.recipes.add(rcpe);
 	}
 	
@@ -219,24 +221,17 @@ public class ServerData {
 	// *** methods to manipulate data
 	// ******************************
 	
-	/**
-	 * Updates the summary of the server data with the TimestampVector sent by a node
-	 * @param tsVector TimestampVector from the node
-	 */
+	public synchronized boolean addLog(Operation operation){
+		return this.log.add(operation);
+	}
+	
 	public synchronized void updateSummary(TimestampVector tsVector){
 		this.summary.updateMax(tsVector);
 	}
 	
-	/**
-	 * Receives an operation from a node, logs it and executes it
-	 * @param receivedOp
-	 */
-	public synchronized void execOperation(Operation receivedOp){
-		if (this.log.add(receivedOp)){
-			if (receivedOp.getType() == OperationType.ADD){
-				this.recipes.add(((AddOperation)receivedOp).getRecipe());
-			}
-			
+	public synchronized void execOperation(AddOperation addOp){
+		if (this.log.add(addOp)){
+			this.recipes.add(addOp.getRecipe());
 		}
 	}
 	
