@@ -167,6 +167,8 @@ public class TSAESessionOriginatorSide extends TimerTask{
 							this.serverData.execOperation(partnerOp.getOperation());
 						}
 						this.serverData.updateSummary(partnerSummary);
+						this.serverData.updateAck(partnerAck);
+						this.serverData.purgeLog();
 					}
 				}
 

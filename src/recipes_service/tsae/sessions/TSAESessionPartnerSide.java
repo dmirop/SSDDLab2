@@ -141,6 +141,8 @@ public class TSAESessionPartnerSide extends Thread{
 							this.serverData.execOperation(partnerOp.getOperation());
 						}
 						this.serverData.updateSummary(originatorSummary);
+						this.serverData.updateAck(originatorAck);
+						this.serverData.purgeLog();
 		            }
 				}
 				

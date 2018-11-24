@@ -226,6 +226,24 @@ public class ServerData {
 	public synchronized void updateSummary(TimestampVector tsVector){
 		this.summary.updateMax(tsVector);
 	}
+	/**
+	 * Updates the ack Matrix with the TimestampMatrix sent by a node
+	 * @param tsMatrix
+	 */
+	public synchronized void updateAck(TimestampMatrix tsMatrix){
+		// Retrieve the local summary to update the ack Matrix
+		TimestampVector summary = this.getSummary();
+		this.ack.update(this.getId(), summary);
+		// Update the ack using Max
+		this.ack.updateMax(tsMatrix);
+	}
+	
+	/**
+	 * Purges the Log
+	 */
+	public synchronized void purgeLog(){
+		this.log.purgeLog(this.getAck());
+	}
 	
 	/**
 	 * Receives an operation from a node, logs it and executes it

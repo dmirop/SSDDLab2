@@ -136,17 +136,20 @@ public class TimestampVector implements Serializable {
 			return;
 		}
 		
+		//Iterate through all entries from the received TimestampVector
 		for(Map.Entry<String, Timestamp> otherTsEntry : tsVector.timestampVector.entrySet()){
 			String node = otherTsEntry.getKey();
 			Timestamp otherTs = otherTsEntry.getValue();
 			
+			//If the node doesn't exist in the local Vector, it is added with the new value
+			//If it does, it gets replaced if it's minimum
 			if (this.getLast(node) == null){
 				this.timestampVector.put(node,  otherTs);
 			} else {
 				long tsDiff = this.getLast(node).compare(otherTs);
 				
 				if (tsDiff > 0){
-					this.updateTimestamp(otherTs);
+					this.timestampVector.replace(node, otherTs);
 				}
 			}
 		}

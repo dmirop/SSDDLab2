@@ -25,6 +25,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -137,11 +138,51 @@ public class Log implements Serializable {
 	 * Removes from the log the operations that have been acknowledged by all
 	 * the members of the group, according to the provided ackSummary.
 	 * 
-	 * @param ack:
-	 *            ackSummary.
+	 * @param ack: ackSummary.
 	 */
 	public void purgeLog(TimestampMatrix ack) {
-		//TODO: PRACTICA 2
+		if (ack == null){
+			return;
+		}
+		
+		//Get the minimum Vector from the received ack
+		TimestampVector minVector = ack.minTimestampVector();
+		
+		if (minVector != null){
+			//Iterate through all entries in the local Log
+			for (Map.Entry<String, List<Operation>> logOperations: this.log.entrySet()){
+				//Retrieve the node from the operation
+				String participant = logOperations.getKey();
+				//Retrieve the minimum Timestamp for the node
+				Timestamp minTs = minVector.getLast(participant);
+				//If there is no Timestamp, the iteration continues
+				if (minTs == null){
+					continue;
+				}
+				
+				//Retrieve the list of operations for the node
+				List<Operation> operations = logOperations.getValue();
+				
+				
+				//Iterate through the operations in backwards because the length of the list will change
+				//as we remove operations
+				int max_index = operations.size()-1;
+				
+				for (int i = max_index; i >= 0; i--){
+					Operation op = operations.get(i);
+					long tsDiff = op.getTimestamp().compare(minTs);
+					
+					if (tsDiff <= 0){
+						operations.remove(i);
+						max_index--;
+					}
+					
+					
+				}
+			
+			}
+		}
+		
 	}
 
 	/**
