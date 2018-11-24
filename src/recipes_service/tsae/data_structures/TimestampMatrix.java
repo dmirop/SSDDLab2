@@ -106,10 +106,17 @@ public class TimestampMatrix implements Serializable{
 	 */
 	@Override
 	public boolean equals(Object obj) {
-		//TODO: PRACTICA 2 Phase 3
+		if (this == obj){
+			return true;
+		} else if (obj == null){
+			return false;			
+		} else if (getClass() != obj.getClass()){
+			return false;
+		}
 		
-		// return generated automatically. Remove it when implementing your solution 
-		return false;
+		TimestampMatrix other = (TimestampMatrix) obj;
+		
+		return this.timestampMatrix.equals(other.timestampMatrix);
 	}
 
 	
