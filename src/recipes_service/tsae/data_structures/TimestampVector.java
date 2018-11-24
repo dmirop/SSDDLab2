@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 //LSim logging system imports sgeag@2017
@@ -31,7 +32,7 @@ import lsim.worker.LSimWorker;
 import edu.uoc.dpcs.lsim.LSimFactory;
 import edu.uoc.dpcs.lsim.logger.LoggerManager.Level;
 
-//Import ArrayList to clone
+//Import Vector to clone
 import java.util.Vector;
 
 /**
@@ -133,6 +134,21 @@ public class TimestampVector implements Serializable {
 	public void mergeMin(TimestampVector tsVector) {
 		if (tsVector == null){
 			return;
+		}
+		
+		for(Map.Entry<String, Timestamp> otherTsEntry : tsVector.timestampVector.entrySet()){
+			String node = otherTsEntry.getKey();
+			Timestamp otherTs = otherTsEntry.getValue();
+			
+			if (this.getLast(node) == null){
+				this.timestampVector.put(node,  otherTs);
+			} else {
+				long tsDiff = this.getLast(node).compare(otherTs);
+				
+				if (tsDiff > 0){
+					this.updateTimestamp(otherTs);
+				}
+			}
 		}
 
 	}

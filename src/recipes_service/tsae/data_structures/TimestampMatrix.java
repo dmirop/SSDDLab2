@@ -23,6 +23,7 @@ package recipes_service.tsae.data_structures;
 import java.io.Serializable;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,6 +31,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import edu.uoc.dpcs.lsim.LSimFactory;
 import lsim.worker.LSimWorker;
 import edu.uoc.dpcs.lsim.logger.LoggerManager.Level;
+
+//Import Vector to clone
+import java.util.Vector;
 
 /**
  * @author Joan-Manuel Marques, Daniel Lázaro Iglesias
@@ -56,10 +60,8 @@ public class TimestampMatrix implements Serializable{
 	 * @return the timestamp vector of node in this timestamp matrix
 	 */
 	TimestampVector getTimestampVector(String node){
-		//TODO: PRACTICA 2 Phase 3
+		return this.timestampMatrix.get(node);
 		
-		// return generated automatically. Remove it when implementing your solution
-		return null;
 	}
 	
 	/**
@@ -67,7 +69,20 @@ public class TimestampMatrix implements Serializable{
 	 * @param tsMatrix
 	 */
 	public void updateMax(TimestampMatrix tsMatrix){
-		//TODO: PRACTICA 2 Phase 3
+		if (tsMatrix == null){
+			return;
+		}
+		
+		for (Map.Entry<String, TimestampVector> tsMatrixElement : this.timestampMatrix.entrySet()){
+			String node = tsMatrixElement.getKey();
+			TimestampVector tsVector = tsMatrixElement.getValue();
+			
+			if(this.getTimestampVector(node) != null){
+
+				this.getTimestampVector(node).updateMax(tsVector);
+			}
+			
+		}
 	}
 	
 	/**
@@ -76,8 +91,15 @@ public class TimestampMatrix implements Serializable{
 	 * @param tsVector
 	 */
 	public void update(String node, TimestampVector tsVector){
-		//TODO: PRACTICA 2 Phase 3
-	}
+		if (node == null || tsVector == null){
+			return;
+			}
+		if (this.timestampMatrix.containsKey(node)){
+			this.timestampMatrix.replace(node,  tsVector);
+		} else {
+			this.timestampMatrix.put(node,  tsVector);
+		}
+		}
 	
 	/**
 	 * 
@@ -85,20 +107,31 @@ public class TimestampMatrix implements Serializable{
 	 * the timestamp known by all participants
 	 */
 	public TimestampVector minTimestampVector(){
-		//TODO: PRACTICA 2 Phase 3
+		List<String> participants = new Vector<String>(this.timestampMatrix.keySet());
 		
-		// return generated automatically. Remove it when implementing your solution 
-		return null;
+		TimestampVector minVector = new TimestampVector(participants);
+		
+		for (String node : participants){
+			minVector.mergeMin(this.getTimestampVector(node));				
+			}	
+		return minVector;
 	}
 	
 	/**
 	 * clone
 	 */
 	public TimestampMatrix clone(){
-		//TODO: PRACTICA 2 Phase 3
+		// Create a list of participants extracting it from this TimestampMatrix
+		List<String> participants = new Vector<String>(this.timestampMatrix.keySet());
 		
-		// return generated automatically. Remove it when implementing your solution 
-		return null;
+		//Call the TimestampMatrix constructor
+		TimestampMatrix clonedTsMatrix = new TimestampMatrix(participants);
+		
+		
+		for (String node : participants){
+			clonedTsMatrix.update(node, this.getTimestampVector(node).clone());
+		}
+		return clonedTsMatrix;
 	}
 	
 	/**
