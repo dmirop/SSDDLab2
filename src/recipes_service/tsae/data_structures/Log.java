@@ -142,6 +142,7 @@ public class Log implements Serializable {
 	 */
 	public void purgeLog(TimestampMatrix ack) {
 		//TODO: PRACTICA 2
+		// usar minTimestampVector() para determinar los mínimos y borrar todos los logs iguales o menores
 	}
 
 	/**
