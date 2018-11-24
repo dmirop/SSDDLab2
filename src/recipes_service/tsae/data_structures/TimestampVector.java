@@ -131,6 +131,10 @@ public class TimestampVector implements Serializable {
 	 *            (timestamp vector)
 	 */
 	public void mergeMin(TimestampVector tsVector) {
+		if (tsVector == null){
+			return;
+		}
+
 	}
 
 	/**
