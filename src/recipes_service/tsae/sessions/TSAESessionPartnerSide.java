@@ -98,6 +98,11 @@ public class TSAESessionPartnerSide extends Thread{
 				   si no lo hace, entonces hay que fusionar las dos matrices tomando los máximos. En la estructura
 				   TimestampMatrix tenemos la función public void updateMax(TimestampMatrix tsMatrix) que precisamente
 				   hace eso, pero está por programar.
+				   Algo del estilo:
+				   localAck = localAck.updateMax(originatorAck); Pero poner sentencia después de declarar localAck Y 
+				   de actualizarla con serverData, unas líneas más abajo
+				   Esta misma rutina se ha de poner tras que el Originator ejecute la AE tras la recepción del Ack y Summary 
+				   del Partner.
 				*/
 				
 				// send to originator: local's summary and ack
