@@ -74,57 +74,59 @@ public class TSAESessionPartnerSide extends Thread{
 			// receive originator's summary and ack
 			msg = (Message) in.readObject();
 			current_session_number = msg.getSessionNumber();
-			//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] TSAE session");
-			//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
+			lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] TSAE session");
+			lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 			if (msg.type() == MsgType.AE_REQUEST){
 				
-				//Save the Summary and Ack received from the Originator node
+
 				TimestampVector originatorSummary = ((MessageAErequest)msg).getSummary();
 				TimestampMatrix originatorAck = ((MessageAErequest)msg).getAck();
 
-				//Get the list of pending operations checking the received Summary
+				
 				List<Operation> pendingOps = this.serverData.getLog().listNewer(originatorSummary);
 				
 				Iterator<Operation> pendingOpsIterator = pendingOps.iterator();
 				
-				//Send the pending operations
 				while (pendingOpsIterator.hasNext()){
 					msg = new MessageOperation(pendingOpsIterator.next());
 					msg.setSessionNumber(current_session_number);
 					out.writeObject(msg);
-					//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
+					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
 				}
-		
+				
+				/* ¿el localAck se actualiza automáticamente a medida que vamos ejecutando los mensajes o no?
+				   si no lo hace, entonces hay que fusionar las dos matrices tomando los máximos. En la estructura
+				   TimestampMatrix tenemos la función public void updateMax(TimestampMatrix tsMatrix) que precisamente
+				   hace eso, pero está por programar.
+				*/
+				
 				// send to originator: local's summary and ack
 				
 				TimestampVector localSummary = null;
 				TimestampMatrix localAck = null;
 				
-				// Using synchronized to make sure no other node interferes
 				synchronized(serverData){					
-					localSummary = this.serverData.getSummary().clone();
-					localAck = this.serverData.getAck().clone();
+					localSummary = this.serverData.getSummary();
+					localAck = this.serverData.getAck();
 				}
-				
-				// After sending the pending operations, it is requested an AE to the originator
+					
 				msg = new MessageAErequest(localSummary, localAck);
 				msg.setSessionNumber(current_session_number);
 	 	        out.writeObject(msg);
-				//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
+				lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
 
 	            // receive operations
 				msg = (Message) in.readObject();
-				//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
+				lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 				
-				
-				// Store operations in a List to take care of them later
-				List<MessageOperation> origin_operations = new Vector<MessageOperation>();
+				List<Operation> origin_operations = new Vector<Operation>();
 				
 				while (msg.type() == MsgType.OPERATION){
-					origin_operations.add((MessageOperation)msg);
-					
+					Operation op = ((MessageOperation)msg).getOperation();
+					origin_operations.add(op);
+					//this.serverData.addLog(op);
 					msg = (Message) in.readObject();
-					//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
+					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] received message: "+ msg);
 				}
 				
 				// receive message to inform about the ending of the TSAE session
@@ -133,27 +135,19 @@ public class TSAESessionPartnerSide extends Thread{
 					msg = new MessageEndTSAE();
 					msg.setSessionNumber(current_session_number);
 		            out.writeObject(msg);					
-					//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
-		            
-		            // Using synchronized to send the operations and update the data structures
-		            synchronized(this.serverData){
-		            	for (MessageOperation partnerOp : origin_operations){
-							this.serverData.execOperation(partnerOp.getOperation());
-						}
-						this.serverData.updateSummary(originatorSummary);
-		            }
+					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
 				}
 				
 			}
 			socket.close();		
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
-			//lsim.log(Level.FATAL, "[TSAESessionPartnerSide] [session: "+current_session_number+"]" + e.getMessage());
+			lsim.log(Level.FATAL, "[TSAESessionPartnerSide] [session: "+current_session_number+"]" + e.getMessage());
 			e.printStackTrace();
             System.exit(1);
 		}catch (IOException e) {
 	    }
 		
-		//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] End TSAE session");
+		lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] End TSAE session");
 	}
 }
