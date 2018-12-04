@@ -40,6 +40,9 @@ import recipes_service.tsae.data_structures.TimestampMatrix;
 import recipes_service.tsae.data_structures.TimestampVector;
 import recipes_service.tsae.sessions.TSAESessionOriginatorSide;
 
+//Imports to allow removing recipes
+import recipes_service.data.RemoveOperation;
+
 /**
  * @author Joan-Manuel Marques
  * December 2012
@@ -156,7 +159,23 @@ public class ServerData {
 	}
 	
 	public synchronized void removeRecipe(String recipeTitle){
-		System.err.println("Error: removeRecipe method (recipesService.serverData) not yet implemented");
+		
+		Timestamp timestamp = nextTimestamp();
+		
+		Recipe rcpe = this.recipes.get(recipeTitle);
+		
+		if (rcpe == null){
+			System.err.println("Error: trying to delete a recipe that isn't stored");
+			
+		} else {
+		Timestamp recipeTs = rcpe.getTimestamp();
+		
+		Operation op = new RemoveOperation(recipeTitle, recipeTs, timestamp);
+		
+		this.log.add(op);
+		this.summary.updateTimestamp(timestamp);
+		this.recipes.remove(recipeTitle);
+		}
 	}
 	
 
@@ -253,6 +272,8 @@ public class ServerData {
 		if (this.log.add(receivedOp)){
 			if (receivedOp.getType() == OperationType.ADD){
 				this.recipes.add(((AddOperation)receivedOp).getRecipe());
+			} else if (receivedOp.getType() == OperationType.REMOVE){
+				this.recipes.remove(((RemoveOperation)receivedOp).getRecipeTitle());
 			}
 			
 		}

@@ -36,6 +36,7 @@ import recipes_service.communication.MessageEndTSAE;
 import recipes_service.communication.MessageOperation;
 import recipes_service.communication.MsgType;
 import recipes_service.data.Operation;
+import recipes_service.data.OperationType;
 import recipes_service.tsae.data_structures.TimestampMatrix;
 import recipes_service.tsae.data_structures.TimestampVector;
 
@@ -135,11 +136,21 @@ public class TSAESessionPartnerSide extends Thread{
 		            out.writeObject(msg);					
 					lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
 		            
-		            // Using synchronized to send the operations and update the data structures
+		            // Using synchronized to send the AddOperations first, then RemoveOperations and, finally, update the data structures
 		            synchronized(this.serverData){
-		            	for (MessageOperation partnerOp : origin_operations){
-							this.serverData.execOperation(partnerOp.getOperation());
-						}
+		            	for (MessageOperation partnerMessageOp : origin_operations){
+		            		if (partnerMessageOp.getOperation().getType() == OperationType.ADD){
+		            			this.serverData.execOperation(partnerMessageOp.getOperation());
+		            			origin_operations.remove(partnerMessageOp);
+		            		}
+		            	}
+		            	
+		            	if (origin_operations.size() > 0){
+		            		for (MessageOperation partnerMessageOp : origin_operations){
+		            			this.serverData.execOperation(partnerMessageOp.getOperation());
+		            		}
+		            	}
+		            	
 						this.serverData.updateSummary(originatorSummary);
 						this.serverData.updateAck(originatorAck);
 						this.serverData.purgeLog();

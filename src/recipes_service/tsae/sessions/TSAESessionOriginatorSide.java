@@ -37,6 +37,7 @@ import recipes_service.communication.MessageEndTSAE;
 import recipes_service.communication.MessageOperation;
 import recipes_service.communication.MsgType;
 import recipes_service.data.Operation;
+import recipes_service.data.OperationType;
 import recipes_service.tsae.data_structures.TimestampMatrix;
 import recipes_service.tsae.data_structures.TimestampVector;
 import communication.ObjectInputStream_DS;
@@ -161,11 +162,21 @@ public class TSAESessionOriginatorSide extends TimerTask{
 				lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
 				if (msg.type() == MsgType.END_TSAE){
 					
-					// Send Operations to ServerData and update the data structures
+					// Send AddOperations first to ServerData, then RemoveOperations and, finally, update the data structures
 					synchronized(this.serverData){
-						for (MessageOperation partnerOp : partner_operations){
-							this.serverData.execOperation(partnerOp.getOperation());
+						for (MessageOperation partnerMessageOp : partner_operations){
+							if (partnerMessageOp.getOperation().getType() == OperationType.ADD){
+								this.serverData.execOperation(partnerMessageOp.getOperation());
+								partner_operations.remove(partnerMessageOp);
+							}
 						}
+						
+						if (partner_operations.size() > 0){
+							for (MessageOperation partnerMessageOp: partner_operations){
+								this.serverData.execOperation(partnerMessageOp.getOperation());
+							}
+						}				
+						
 						this.serverData.updateSummary(partnerSummary);
 						this.serverData.updateAck(partnerAck);
 						this.serverData.purgeLog();
