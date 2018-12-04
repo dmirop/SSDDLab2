@@ -164,18 +164,25 @@ public class TSAESessionOriginatorSide extends TimerTask{
 					
 					// Send AddOperations first to ServerData, then RemoveOperations and, finally, update the data structures
 					synchronized(this.serverData){
+						
+						List<MessageOperation> add_operations = new Vector<MessageOperation>();
+		            	List<MessageOperation> remove_operations = new Vector<MessageOperation>();
+						
 						for (MessageOperation partnerMessageOp : partner_operations){
 							if (partnerMessageOp.getOperation().getType() == OperationType.ADD){
-								this.serverData.execOperation(partnerMessageOp.getOperation());
-								partner_operations.remove(partnerMessageOp);
+								add_operations.add(partnerMessageOp);
+							} else {
+								remove_operations.add(partnerMessageOp);
 							}
 						}
 						
-						if (partner_operations.size() > 0){
-							for (MessageOperation partnerMessageOp: partner_operations){
-								this.serverData.execOperation(partnerMessageOp.getOperation());
-							}
-						}				
+						for (MessageOperation addMessageOp : add_operations){
+		            		this.serverData.execOperation(addMessageOp.getOperation());
+		            	}
+		            	
+		            	for (MessageOperation removeMessageOp: remove_operations){
+		            		this.serverData.execOperation(removeMessageOp.getOperation());
+		            	}
 						
 						this.serverData.updateSummary(partnerSummary);
 						this.serverData.updateAck(partnerAck);
