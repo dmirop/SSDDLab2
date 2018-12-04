@@ -164,10 +164,6 @@ public class ServerData {
 		
 		Recipe rcpe = this.recipes.get(recipeTitle);
 		
-		if (rcpe == null){
-			System.err.println("Error: trying to delete a recipe that isn't stored");
-			
-		} else {
 		Timestamp recipeTs = rcpe.getTimestamp();
 		
 		Operation op = new RemoveOperation(recipeTitle, recipeTs, timestamp);
@@ -175,7 +171,7 @@ public class ServerData {
 		this.log.add(op);
 		this.summary.updateTimestamp(timestamp);
 		this.recipes.remove(recipeTitle);
-		}
+		
 	}
 	
 
