@@ -60,7 +60,7 @@ public class TimestampMatrix implements Serializable{
 	 * @return the timestamp vector of node in this timestamp matrix
 	 */
 	TimestampVector getTimestampVector(String node){
-		return this.timestampMatrix.get(node);
+		return timestampMatrix.get(node);
 		
 	}
 	
@@ -68,7 +68,7 @@ public class TimestampMatrix implements Serializable{
 	 * Merges two timestamp matrix taking the elementwise maximum
 	 * @param tsMatrix
 	 */
-	public void updateMax(TimestampMatrix tsMatrix){
+	public synchronized void updateMax(TimestampMatrix tsMatrix){
 		if (tsMatrix == null){
 			return;
 		}
@@ -80,9 +80,9 @@ public class TimestampMatrix implements Serializable{
 			TimestampVector tsVector = tsMatrixElement.getValue();
 			
 			//If the node exists in the local TimestampMatrix, update its TimestampVector with the max value
-			if(this.getTimestampVector(node) != null){
+			if(getTimestampVector(node) != null){
 
-				this.getTimestampVector(node).updateMax(tsVector);
+				getTimestampVector(node).updateMax(tsVector);
 			}
 			
 		}
@@ -93,12 +93,12 @@ public class TimestampMatrix implements Serializable{
 	 * @param node
 	 * @param tsVector
 	 */
-	public void update(String node, TimestampVector tsVector){
+	public synchronized void update(String node, TimestampVector tsVector){
 		if (node == null || tsVector == null){
 			return;
 			}
 		
-		this.timestampMatrix.put(node,  tsVector);
+		timestampMatrix.put(node,  tsVector);
 		}
 	
 	/**
@@ -106,17 +106,17 @@ public class TimestampMatrix implements Serializable{
 	 * @return a timestamp vector containing, for each node, 
 	 * the timestamp known by all participants
 	 */
-	public TimestampVector minTimestampVector(){
+	public synchronized TimestampVector minTimestampVector(){
 		//Create an empty TimestampVector
 		TimestampVector minTsV = null;
 		
 		//Retrieve the list of participant nodes from local Matrix
-		List<String> participants = new Vector<String>(this.timestampMatrix.keySet());
+		List<String> participants = new Vector<String>(timestampMatrix.keySet());
 		
 		//For every participant, retrieve its TimestampVector. If the minimum Vector is null, it gets a copy.
 		//If not, it merges with the minimum value.
 		for (String node : participants){
-			TimestampVector tsVector = this.getTimestampVector(node);
+			TimestampVector tsVector = getTimestampVector(node);
 			if (minTsV == null){
 				minTsV = tsVector.clone();
 			} else {
@@ -133,14 +133,14 @@ public class TimestampMatrix implements Serializable{
 	 */
 	public TimestampMatrix clone(){
 		// Create a list of participants extracting it from this TimestampMatrix
-		List<String> participants = new Vector<String>(this.timestampMatrix.keySet());
+		List<String> participants = new Vector<String>(timestampMatrix.keySet());
 		
 		//Call the TimestampMatrix constructor
 		TimestampMatrix clonedTsMatrix = new TimestampMatrix(participants);
 		
 		
 		for (String node : participants){
-			clonedTsMatrix.update(node, this.getTimestampVector(node).clone());
+			clonedTsMatrix.update(node, getTimestampVector(node).clone());
 		}
 		return clonedTsMatrix;
 	}
@@ -160,7 +160,7 @@ public class TimestampMatrix implements Serializable{
 		
 		TimestampMatrix other = (TimestampMatrix) obj;
 		
-		return this.timestampMatrix.equals(other.timestampMatrix);
+		return timestampMatrix.equals(other.timestampMatrix);
 	}
 
 	

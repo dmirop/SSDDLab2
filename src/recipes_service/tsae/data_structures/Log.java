@@ -66,7 +66,7 @@ public class Log implements Serializable {
 	 * @param op
 	 * @return true if op is inserted, false otherwise.
 	 */
-	public boolean add(Operation op) {
+	public synchronized boolean add(Operation op) {
 		//lsim.log((Level.TRACE, "Inserting into Log the operation: " + op);
 
 		// Get the HostId from the operation to insert
@@ -75,7 +75,7 @@ public class Log implements Serializable {
 
 		// Retrieve the list of Operations that are stored in the log for that
 		// HostId
-		List<Operation> opHostIdOperations = this.log.get(opHostId);
+		List<Operation> opHostIdOperations = log.get(opHostId);
 
 		// Retrieve the last timestamp in the list of Operations
 		Timestamp lastTimestampHostId;
@@ -95,7 +95,7 @@ public class Log implements Serializable {
 		if (tsDiff > 0 || (lastTimestampHostId == null && tsDiff == 0)) {
 		//if ((lastTimestampHostId != null && tsDiff == 1 || lastTimestampHostId == null && tsDiff == 0)) {
 			//lsim.log(Level.DEBUG, "Inserting operation: " + op);
-			this.log.get(opHostId).add(op);
+			log.get(opHostId).add(op);
 			return true;
 		} else {
 			//lsim.log(Level.ERROR, "Insertion of operations " + op + " failed.");
@@ -111,7 +111,7 @@ public class Log implements Serializable {
 	 * @param sum
 	 * @return list of operations
 	 */
-	public List<Operation> listNewer(TimestampVector sum) {
+	public synchronized List<Operation> listNewer(TimestampVector sum) {
 
 		// Create an empty list using the Vector class that is already imported
 		List<Operation> missingOps = new Vector<Operation>();
@@ -121,9 +121,9 @@ public class Log implements Serializable {
 		// If the stored operation is newer, it is added to the list of missing
 		// operations
 
-		for (String node : this.log.keySet()) {
+		for (String node : log.keySet()) {
 			Timestamp summaryTs = sum.getLast(node);
-			List<Operation> operations = this.log.get(node);
+			List<Operation> operations = log.get(node);
 
 			for (Operation op : operations) {
 				if (op.getTimestamp().compare(summaryTs) > 0) {
@@ -141,7 +141,7 @@ public class Log implements Serializable {
 	 * 
 	 * @param ack: ackSummary.
 	 */
-	public void purgeLog(TimestampMatrix ack) {
+	public synchronized void purgeLog(TimestampMatrix ack) {
 		if (ack == null){
 			return;
 		}
@@ -151,7 +151,7 @@ public class Log implements Serializable {
 		
 		if (minVector != null){
 			//Iterate through all entries in the local Log
-			for (Map.Entry<String, List<Operation>> logOperations: this.log.entrySet()){
+			for (Map.Entry<String, List<Operation>> logOperations: log.entrySet()){
 				//Retrieve the node from the operation
 				String participant = logOperations.getKey();
 				//Retrieve the minimum Timestamp for the node
@@ -175,7 +175,7 @@ public class Log implements Serializable {
 					
 					if (tsDiff <= 0){
 						operations.remove(i);
-						max_index--;
+						//max_index--;
 					}
 					
 					
@@ -207,7 +207,7 @@ public class Log implements Serializable {
 
 		Log other = (Log) obj;
 
-		return this.log.equals(other.log);
+		return log.equals(other.log);
 
 	}
 

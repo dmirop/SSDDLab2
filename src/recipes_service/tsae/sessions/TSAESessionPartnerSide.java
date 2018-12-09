@@ -86,8 +86,8 @@ public class TSAESessionPartnerSide extends Thread{
 				//Get the list of pending operations checking the received Summary
 				List<Operation> pendingOps = null;
 				
-				synchronized(this.serverData){
-				pendingOps = this.serverData.getLog().listNewer(originatorSummary);
+				synchronized(serverData){
+				pendingOps = serverData.getLog().listNewer(originatorSummary);
 				}
 				
 				Iterator<Operation> pendingOpsIterator = pendingOps.iterator();
@@ -107,9 +107,9 @@ public class TSAESessionPartnerSide extends Thread{
 				
 				// Using synchronized to make sure no other node interferes
 				synchronized(serverData){					
-					localSummary = this.serverData.getSummary().clone();
-					this.serverData.getAck().update(this.serverData.getId(), localSummary);
-					localAck = this.serverData.getAck().clone();
+					localSummary = serverData.getSummary().clone();
+					serverData.getAck().update(serverData.getId(), localSummary);
+					localAck = serverData.getAck().clone();
 				}
 				
 				// After sending the pending operations, it is requested an AE to the originator
@@ -153,32 +153,32 @@ public class TSAESessionPartnerSide extends Thread{
 	            	}*/
 		            
 		            // Using synchronized to send the AddOperations first, then RemoveOperations and, finally, update the data structures
-		            synchronized(this.serverData){
+		            synchronized(serverData){
 		            	
 		            	/*for (MessageOperation addMessageOp : add_operations){
 		            		//lsim.log(Level.TRACE, "Sending addOp: "+addMessageOp);
-		            		this.serverData.execOperation(addMessageOp.getOperation());
+		            		serverData.execOperation(addMessageOp.getOperation());
 		            	}
 		            	
 		            	for (MessageOperation removeMessageOp: remove_operations){
 		            		//lsim.log(Level.TRACE, "Sending removeOp: "+removeMessageOp);
-		            		this.serverData.execOperation(removeMessageOp.getOperation());
+		            		serverData.execOperation(removeMessageOp.getOperation());
 		            	}*/
 		            	lsim.log(Level.FATAL, "Passing messages from originator: "+origin_operations);
 		            	
 		            	for (MessageOperation messageOp : origin_operations){
-		            		this.serverData.execOperation(messageOp.getOperation());
+		            		serverData.execOperation(messageOp.getOperation());
 		            		lsim.log(Level.FATAL, "Operation: "+messageOp.getOperation());;
-		            		lsim.log(Level.FATAL, "Log: "+this.serverData.getLog());
+		            		lsim.log(Level.FATAL, "Log: "+serverData.getLog());
 		            	}
 		            	
-						/*this.serverData.updateSummary(originatorSummary);
-						this.serverData.updateAck(originatorAck);
-						this.serverData.purgeLog();*/
-		            	this.serverData.getSummary().updateMax(originatorSummary);
-		            	//this.serverData.getAck().update(this.serverData.getId(), this.serverData.getSummary());
-		            	this.serverData.getAck().updateMax(originatorAck);
-		            	this.serverData.getLog().purgeLog(this.serverData.getAck());
+						/*serverData.updateSummary(originatorSummary);
+						serverData.updateAck(originatorAck);
+						serverData.purgeLog();*/
+		            	serverData.getSummary().updateMax(originatorSummary);
+		            	//serverData.getAck().update(serverData.getId(), serverData.getSummary());
+		            	serverData.getAck().updateMax(originatorAck);
+		            	serverData.getLog().purgeLog(serverData.getAck());
 		            }
 				}
 				
