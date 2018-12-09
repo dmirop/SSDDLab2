@@ -73,7 +73,7 @@ public class TimestampVector implements Serializable {
 			//lsim.log(Level.ERROR, "Trying to update the vector with a null timestamp");
 		} else {
 			//lsim.log(Level.DEBUG, "Timestamp updated for host: " + timestamp.getHostid());
-			timestampVector.replace(timestamp.getHostid(), timestamp);
+			this.timestampVector.replace(timestamp.getHostid(), timestamp);
 		}
 	}
 
@@ -91,13 +91,13 @@ public class TimestampVector implements Serializable {
 		
 		// Create a list of participants extracting it from this timestampVector
 		
-		for (String node : timestampVector.keySet()){
+		for (String node : this.timestampVector.keySet()){
 			Timestamp newTs = tsVector.getLast(node);
 			
 			if (newTs == null){
 				continue;
 			} else {	
-			long tsDiff = getLast(node).compare(newTs);
+			long tsDiff = this.getLast(node).compare(newTs);
 			
 			if (tsDiff < 0){
 				updateTimestamp(newTs);
@@ -112,13 +112,13 @@ public class TimestampVector implements Serializable {
 	 * @param node
 	 * @return the last timestamp issued by node that has been received.
 	 */
-	public Timestamp getLast(String node) {
+	public synchronized Timestamp getLast(String node) {
 
 		if (node == null) {
 			//lsim.log(Level.ERROR, "Trying to retrieve the timestamp of a null node");
 			return null;
 		} else {
-			return timestampVector.get(node);
+			return this.timestampVector.get(node);
 		}
 
 	}
@@ -140,15 +140,17 @@ public class TimestampVector implements Serializable {
 		for(Map.Entry<String, Timestamp> otherTsEntry : tsVector.timestampVector.entrySet()){
 			String node = otherTsEntry.getKey();
 			Timestamp otherTs = otherTsEntry.getValue();
+			Timestamp thisTs = this.getLast(node);
 			
 			//If the node doesn't exist in the local Vector, it is added with the new value
 			//If it does, it gets replaced if it's minimum
-			if (getLast(node) == null){
+			if (thisTs == null){
 				timestampVector.put(node,  otherTs);
 			} else {
-				long tsDiff = getLast(node).compare(otherTs);
+				//long tsDiff = getLast(node).compare(otherTs);
+				long tsDiff = otherTs.compare(thisTs);
 				
-				if (tsDiff > 0){
+				if (tsDiff < 0){
 					timestampVector.replace(node, otherTs);
 				}
 			}
@@ -159,7 +161,7 @@ public class TimestampVector implements Serializable {
 	/**
 	 * clone
 	 */
-	public TimestampVector clone() {
+	public synchronized TimestampVector clone() {
 
 		// Create a list of participants extracting it from this timestampVector
 		List<String> participants = new Vector<String>(timestampVector.keySet());
@@ -179,7 +181,7 @@ public class TimestampVector implements Serializable {
 	/**
 	 * equals
 	 */
-	public boolean equals(Object obj) {
+	public synchronized boolean equals(Object obj) {
 		// Check if obj is this same instance, if it's null or if shares the
 		// same class
 		if (this == obj) {

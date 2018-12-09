@@ -275,6 +275,18 @@ public class ServerData {
 		}
 	}
 	
+	public synchronized void execOperation(AddOperation receivedOp){
+		if (this.log.add(receivedOp)){
+			this.recipes.add(receivedOp.getRecipe());
+		}
+	}
+	
+	public synchronized void execOperation(RemoveOperation receivedOp){
+		if (this.log.add(receivedOp)){
+			this.recipes.remove(receivedOp.getRecipeTitle());
+		}
+	}
+	
 	// ******************************
 	// *** other
 	// ******************************

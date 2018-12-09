@@ -59,9 +59,8 @@ public class TimestampMatrix implements Serializable{
 	 * @param node
 	 * @return the timestamp vector of node in this timestamp matrix
 	 */
-	TimestampVector getTimestampVector(String node){
-		return timestampMatrix.get(node);
-		
+	synchronized TimestampVector getTimestampVector(String node){
+		return this.timestampMatrix.get(node);
 	}
 	
 	/**
@@ -78,11 +77,12 @@ public class TimestampMatrix implements Serializable{
 			//Get the node and TimestampVector
 			String node = tsMatrixElement.getKey();
 			TimestampVector tsVector = tsMatrixElement.getValue();
+			TimestampVector tsNode = this.getTimestampVector(node);
 			
 			//If the node exists in the local TimestampMatrix, update its TimestampVector with the max value
-			if(getTimestampVector(node) != null){
+			if(tsNode != null){
 
-				getTimestampVector(node).updateMax(tsVector);
+				tsNode.updateMax(tsVector);
 			}
 			
 		}
@@ -97,8 +97,10 @@ public class TimestampMatrix implements Serializable{
 		if (node == null || tsVector == null){
 			return;
 			}
-		
-		timestampMatrix.put(node,  tsVector);
+		if (this.timestampMatrix.containsKey(node)){
+		this.timestampMatrix.replace(node,  tsVector);
+		} else {
+			this.timestampMatrix.put(node, tsVector);}
 		}
 	
 	/**
@@ -131,7 +133,7 @@ public class TimestampMatrix implements Serializable{
 	/**
 	 * clone
 	 */
-	public TimestampMatrix clone(){
+	public synchronized TimestampMatrix clone(){
 		// Create a list of participants extracting it from this TimestampMatrix
 		List<String> participants = new Vector<String>(timestampMatrix.keySet());
 		
@@ -149,7 +151,7 @@ public class TimestampMatrix implements Serializable{
 	 * equals
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public synchronized boolean equals(Object obj) {
 		if (this == obj){
 			return true;
 		} else if (obj == null){

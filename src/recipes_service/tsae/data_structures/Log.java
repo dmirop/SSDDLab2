@@ -173,7 +173,7 @@ public class Log implements Serializable {
 					Operation op = operations.get(i);
 					long tsDiff = op.getTimestamp().compare(minTs);
 					
-					if (tsDiff <= 0){
+					if (tsDiff < 0){
 						operations.remove(i);
 						//max_index--;
 					}
@@ -190,7 +190,7 @@ public class Log implements Serializable {
 	 * equals
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public synchronized boolean equals(Object obj) {
 		// Check if obj is this same instance, if it's null or if shares the
 		// same class
 		if (this == obj) {

@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.TimerTask;
 import java.util.Vector;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import recipes_service.ServerData;
@@ -38,6 +39,8 @@ import recipes_service.communication.MessageOperation;
 import recipes_service.communication.MsgType;
 import recipes_service.data.Operation;
 import recipes_service.data.OperationType;
+import recipes_service.data.AddOperation;
+import recipes_service.data.RemoveOperation;
 import recipes_service.tsae.data_structures.TimestampMatrix;
 import recipes_service.tsae.data_structures.TimestampVector;
 import communication.ObjectInputStream_DS;
@@ -103,14 +106,14 @@ public class TSAESessionOriginatorSide extends TimerTask{
 			ObjectInputStream_DS in = new ObjectInputStream_DS(socket.getInputStream());
 			ObjectOutputStream_DS out = new ObjectOutputStream_DS(socket.getOutputStream());
 			
-			TimestampVector localSummary = null;
-			TimestampMatrix localAck = null;
+			TimestampVector localSummary;
+			TimestampMatrix localAck;
 			
 			// Use synchronized so no other nodes can interfere
 			synchronized (serverData){
 				localSummary = serverData.getSummary().clone();
 				serverData.getAck().update(serverData.getId(), localSummary);
-				localAck =serverData.getAck().clone();				
+				localAck = serverData.getAck().clone();				
 			}
 			
 			// Send to partner: local's summary and ack
@@ -125,7 +128,7 @@ public class TSAESessionOriginatorSide extends TimerTask{
 			//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
 			
 			//Store the partner operations in a List to process later
-			List<MessageOperation> partner_operations = new Vector<MessageOperation>();
+			List<MessageOperation> partner_operations = new ArrayList<MessageOperation>();
 			while (msg.type() == MsgType.OPERATION){
 				partner_operations.add((MessageOperation)msg);
 
@@ -136,17 +139,23 @@ public class TSAESessionOriginatorSide extends TimerTask{
             // receive partner's summary and ack
 			if (msg.type() == MsgType.AE_REQUEST){
 				
-				// Store partner's Summary and Ack
-				TimestampVector partnerSummary = ((MessageAErequest)msg).getSummary();
-				TimestampMatrix partnerAck = ((MessageAErequest)msg).getAck();
+				MessageAErequest aeMsg = (MessageAErequest) msg;
 				
-				List<Operation> pendingOps = null;				
-				
-				synchronized (serverData){
-				pendingOps = serverData.getLog().listNewer(partnerSummary);
+				for (Operation op: serverData.getLog().listNewer(aeMsg.getSummary())){
+					out.writeObject(new MessageOperation(op));
 				}
+			
+				// Store partner's Summary and Ack
+				/*TimestampVector partnerSummary = ((MessageAErequest)msg).getSummary();
+				TimestampMatrix partnerAck = ((MessageAErequest)msg).getAck();*/
 				
-				Iterator<Operation> pendingOpsIterator = pendingOps.iterator();
+				//List<Operation> pendingOps = null;				
+				
+				//synchronized (serverData){
+				//pendingOps = serverData.getLog().listNewer(partnerSummary);
+				//}
+				
+				/*Iterator<Operation> pendingOpsIterator = pendingOps.iterator();
 				
 				// send operations
 				while (pendingOpsIterator.hasNext()){
@@ -154,7 +163,7 @@ public class TSAESessionOriginatorSide extends TimerTask{
 					msg.setSessionNumber(current_session_number);
 					out.writeObject(msg);
 					//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
-				}
+				}*/
 
 				// send and "end of TSAE session" message
 				msg = new MessageEndTSAE();  
@@ -191,17 +200,22 @@ public class TSAESessionOriginatorSide extends TimerTask{
 						lsim.log(Level.FATAL, "Passing messages from partner: "+partner_operations);
 		            	
 		            	for (MessageOperation messageOp : partner_operations){
-		            		serverData.execOperation(messageOp.getOperation());
-		            		lsim.log(Level.FATAL, "Operation: "+messageOp.getOperation());;
-		            		lsim.log(Level.FATAL, "Log: "+serverData.getLog());
+		            		if (messageOp.getOperation().getType() == OperationType.ADD){
+		            			serverData.execOperation((AddOperation) messageOp.getOperation());
+		            		} else {
+		            			serverData.execOperation((RemoveOperation) messageOp.getOperation());
+		            		}
+		            		//serverData.execOperation(messageOp.getOperation());
+		            		//lsim.log(Level.FATAL, "Operation: "+messageOp.getOperation());;
+		            		//lsim.log(Level.FATAL, "Log: "+serverData.getLog());
 		            	}
 						
 						/*serverData.updateSummary(partnerSummary);
 						serverData.updateAck(partnerAck);
 						serverData.purgeLog();*/
-		            	serverData.getSummary().updateMax(partnerSummary);
-		            	serverData.getAck().update(serverData.getId(), serverData.getSummary());
-		            	serverData.getAck().updateMax(partnerAck);
+		            	serverData.getSummary().updateMax(aeMsg.getSummary());
+		            	//serverData.getAck().update(serverData.getId(), serverData.getSummary());
+		            	serverData.getAck().updateMax(aeMsg.getAck());
 		            	serverData.getLog().purgeLog(serverData.getAck());
 					}
 				}
