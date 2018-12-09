@@ -1,4 +1,0 @@
-21-10-2018 17:55:35:147 phase1 [TRACE] : Inserting into Log the operation: AddOperation [recipe=[magaud, magaud, phase1], timestamp=localhost:9000:   0]
-21-10-2018 17:55:35:157 phase1 [INFO] : Inserting operation: AddOperation [recipe=[magaud, magaud, phase1], timestamp=localhost:9000:   0]
-21-10-2018 17:55:35:158 phase1 [TRACE] : Updating the TimestampVectorInserting with the timestamp: localhost:9000:   0
-21-10-2018 17:55:35:158 phase1 [DEBUG] : Timestamp updated for host: localhost:9000
