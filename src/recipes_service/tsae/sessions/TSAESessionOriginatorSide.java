@@ -61,6 +61,8 @@ public class TSAESessionOriginatorSide extends TimerTask{
 	private LSimWorker lsim = LSimFactory.getWorkerInstance();
 	private static AtomicInteger session_number = new AtomicInteger(0);
 	
+	//private Object mutex = new Object();
+	
 	private ServerData serverData;
 	public TSAESessionOriginatorSide(ServerData serverData){
 		super();
@@ -99,20 +101,25 @@ public class TSAESessionOriginatorSide extends TimerTask{
 		int current_session_number = session_number.incrementAndGet();
 		if (n == null) return;
 		
+		lsim.log(Level.TRACE, "------------------Starting Originator Session "+current_session_number+" to host: "+n+"-------");
 		//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] TSAE session");
 
 		try {
+			//Object mutex = new Object();
 			Socket socket = new Socket(n.getAddress(), n.getPort());
 			ObjectInputStream_DS in = new ObjectInputStream_DS(socket.getInputStream());
 			ObjectOutputStream_DS out = new ObjectOutputStream_DS(socket.getOutputStream());
 			
-			TimestampVector localSummary;
-			TimestampMatrix localAck;
+			TimestampVector localSummary = null;
+			TimestampMatrix localAck = null;
 			
-			// Use synchronized so no other nodes can interfere
-			synchronized (serverData){
+			// Use synchronized so no other threads can interfere
+			lsim.log(Level.TRACE, "Originator Session "+current_session_number+": retrieving Summary and Ack from serverData");
+			
+			Object mutexGet = new Object();
+			
+			synchronized (mutexGet){
 				localSummary = serverData.getSummary().clone();
-				serverData.getAck().update(serverData.getId(), localSummary);
 				localAck = serverData.getAck().clone();				
 			}
 			
@@ -120,13 +127,14 @@ public class TSAESessionOriginatorSide extends TimerTask{
 			Message	msg = new MessageAErequest(localSummary, localAck);
 			msg.setSessionNumber(current_session_number);
             out.writeObject(msg);
+            lsim.log(Level.TRACE, "Originator Session "+current_session_number+": sending Summary and Ack. Message:\n"+msg);
 			//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] sent message: "+msg);
           
 
             // receive operations from partner
 			msg = (Message) in.readObject();
 			//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
-			
+			lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Receiving message from Partner (Operation or Request). Message:\n"+msg);
 			//Store the partner operations in a List to process later
 			List<MessageOperation> partner_operations = new ArrayList<MessageOperation>();
 			while (msg.type() == MsgType.OPERATION){
@@ -135,48 +143,40 @@ public class TSAESessionOriginatorSide extends TimerTask{
 				msg = (Message) in.readObject();
 				//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
 			}
+			
+			if (partner_operations.size() > 0) lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Received operations from Partner:\n"+partner_operations);
 
             // receive partner's summary and ack
 			if (msg.type() == MsgType.AE_REQUEST){
 				
-				MessageAErequest aeMsg = (MessageAErequest) msg;
+				MessageAErequest PartnerAEMsg = (MessageAErequest) msg;
+				lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Received Request from Partner:\n"+msg);
 				
-				for (Operation op: serverData.getLog().listNewer(aeMsg.getSummary())){
-					out.writeObject(new MessageOperation(op));
+				if (serverData.getLog().listNewer(PartnerAEMsg.getSummary()).size() > 0){
+				lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Sending Operations to Partner:\n"+serverData.getLog().listNewer(PartnerAEMsg.getSummary()));
+				}
+				// Send operations to partner
+				for (Operation op: serverData.getLog().listNewer(PartnerAEMsg.getSummary())){
+					MessageOperation OpMsg = new MessageOperation(op);
+					OpMsg.setSessionNumber(current_session_number);
+					out.writeObject(OpMsg);
+					//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] sent message: "+OpMsg);
 				}
 			
-				// Store partner's Summary and Ack
-				/*TimestampVector partnerSummary = ((MessageAErequest)msg).getSummary();
-				TimestampMatrix partnerAck = ((MessageAErequest)msg).getAck();*/
-				
-				//List<Operation> pendingOps = null;				
-				
-				//synchronized (serverData){
-				//pendingOps = serverData.getLog().listNewer(partnerSummary);
-				//}
-				
-				/*Iterator<Operation> pendingOpsIterator = pendingOps.iterator();
-				
-				// send operations
-				while (pendingOpsIterator.hasNext()){
-					msg = new MessageOperation(pendingOpsIterator.next());
-					msg.setSessionNumber(current_session_number);
-					out.writeObject(msg);
-					//lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] sent message: "+ msg);
-				}*/
-
-				// send and "end of TSAE session" message
+				// send an "end of TSAE session" message
 				msg = new MessageEndTSAE();  
 				msg.setSessionNumber(current_session_number);
-	            out.writeObject(msg);					
+	            out.writeObject(msg);
+	            lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Sending End Session");
 				//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] sent message: "+msg);
 
 				// receive message to inform about the ending of the TSAE session
 				msg = (Message) in.readObject();
 				//lsim.log(Level.TRACE, "[TSAESessionOriginatorSide] [session: "+current_session_number+"] received message: "+msg);
 				if (msg.type() == MsgType.END_TSAE){
+					lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Received End Session Ack from partner");
 					
-					/*List<MessageOperation> add_operations = new Vector<MessageOperation>();
+					List<MessageOperation> add_operations = new Vector<MessageOperation>();
 	            	List<MessageOperation> remove_operations = new Vector<MessageOperation>();
 	            	
 					for (MessageOperation partnerMessageOp : partner_operations){
@@ -185,38 +185,31 @@ public class TSAESessionOriginatorSide extends TimerTask{
 						} else {
 							remove_operations.add(partnerMessageOp);
 						}
-					}*/
-	            	
+					}
+	            	if (add_operations.size()>0) lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Sendind add_ops:\n"+add_operations);
+	            	if (remove_operations.size()>0) lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Sending rm_ops:\n"+remove_operations);
+					
+					
 					// Send AddOperations first to ServerData, then RemoveOperations and, finally, update the data structures
-					synchronized(serverData){
+					Object mutexSet = new Object();
+	            	synchronized(mutexSet){
 
-						/*for (MessageOperation addMessageOp : add_operations){
-		            		serverData.execOperation(addMessageOp.getOperation());
+						for (MessageOperation addMessageOp : add_operations){
+		            		serverData.execOperation((AddOperation)addMessageOp.getOperation());
 		            	}
 		            	
 		            	for (MessageOperation removeMessageOp: remove_operations){
-		            		serverData.execOperation(removeMessageOp.getOperation());
-		            	}*/
-						lsim.log(Level.FATAL, "Passing messages from partner: "+partner_operations);
-		            	
-		            	for (MessageOperation messageOp : partner_operations){
-		            		if (messageOp.getOperation().getType() == OperationType.ADD){
-		            			serverData.execOperation((AddOperation) messageOp.getOperation());
-		            		} else {
-		            			serverData.execOperation((RemoveOperation) messageOp.getOperation());
-		            		}
-		            		//serverData.execOperation(messageOp.getOperation());
-		            		//lsim.log(Level.FATAL, "Operation: "+messageOp.getOperation());;
-		            		//lsim.log(Level.FATAL, "Log: "+serverData.getLog());
+		            		//lsim.log(Level.FATAL, "Originator Session "+current_session_number+": Sending remove OP:\n"+removeMessageOp);
+		            		serverData.execOperation((RemoveOperation)removeMessageOp.getOperation());
 		            	}
-						
-						/*serverData.updateSummary(partnerSummary);
-						serverData.updateAck(partnerAck);
-						serverData.purgeLog();*/
-		            	serverData.getSummary().updateMax(aeMsg.getSummary());
-		            	//serverData.getAck().update(serverData.getId(), serverData.getSummary());
-		            	serverData.getAck().updateMax(aeMsg.getAck());
+						lsim.log(Level.TRACE, "Originator Session "+current_session_number+": Recipes in server:\n"+serverData.getRecipes());					
+		            	serverData.getSummary().updateMax(PartnerAEMsg.getSummary());
+		            	lsim.log(Level.TRACE, "Originator Session "+current_session_number+": New Summary:\n"+serverData.getSummary());
+		            	serverData.getAck().update(serverData.getId(), serverData.getSummary());
+		            	serverData.getAck().updateMax(PartnerAEMsg.getAck());
+		            	lsim.log(Level.TRACE, "Originator Session "+current_session_number+": New Ack (includes previous Sum):\n"+serverData.getAck());
 		            	serverData.getLog().purgeLog(serverData.getAck());
+		            	lsim.log(Level.TRACE, "Originator Session "+current_session_number+": New Log:\n"+serverData.getLog());
 					}
 				}
 

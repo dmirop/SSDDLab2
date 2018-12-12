@@ -25,6 +25,7 @@ import java.util.Timer;
 import java.util.Vector;
 
 import edu.uoc.dpcs.lsim.LSimFactory;
+import edu.uoc.dpcs.lsim.logger.LoggerManager.Level;
 import lsim.worker.LSimWorker;
 import recipes_service.activity_simulation.SimulationData;
 import recipes_service.communication.Host;
@@ -63,6 +64,9 @@ public class ServerData {
 
 	// timestamp lock
 	private Object timestampLock = new Object();
+	
+	// log lock
+	private Object logLock = new Object();
 	
 	// TSAE data structures
 	private Log log = null;
@@ -276,14 +280,28 @@ public class ServerData {
 	}
 	
 	public synchronized void execOperation(AddOperation receivedOp){
+		synchronized(logLock){
+		lsim.log(Level.FATAL, "Trying to add a recipe: "+receivedOp);
 		if (this.log.add(receivedOp)){
+			lsim.log(Level.FATAL, "Added to log:\n"+this.getLog());
 			this.recipes.add(receivedOp.getRecipe());
+			lsim.log(Level.FATAL,  "Recipes list:\n"+this.getRecipes());
+		} else {
+			lsim.log(Level.FATAL, "Not added to the log... WTF!");
+		}
 		}
 	}
 	
 	public synchronized void execOperation(RemoveOperation receivedOp){
+		synchronized(logLock){
+		lsim.log(Level.FATAL,  "Trying to remove a recipe: "+receivedOp);
 		if (this.log.add(receivedOp)){
+			lsim.log(Level.FATAL, "Added to log:\n"+this.getLog());
 			this.recipes.remove(receivedOp.getRecipeTitle());
+			lsim.log(Level.FATAL, "Recipes list:\n"+this.getRecipes());
+		}else {
+			lsim.log(Level.FATAL,  "Not added to the log... WTH!");
+			}
 		}
 	}
 	

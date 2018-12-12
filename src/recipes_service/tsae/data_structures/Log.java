@@ -92,7 +92,7 @@ public class Log implements Serializable {
 		// older, we add the operation into the logs
 		long tsDiff = opTimestamp.compare(lastTimestampHostId);
 
-		if (tsDiff > 0 || (lastTimestampHostId == null && tsDiff == 0)) {
+		if (tsDiff >= 1 || (lastTimestampHostId == null && tsDiff == 0)) {
 		//if ((lastTimestampHostId != null && tsDiff == 1 || lastTimestampHostId == null && tsDiff == 0)) {
 			//lsim.log(Level.DEBUG, "Inserting operation: " + op);
 			log.get(opHostId).add(op);
@@ -173,7 +173,7 @@ public class Log implements Serializable {
 					Operation op = operations.get(i);
 					long tsDiff = op.getTimestamp().compare(minTs);
 					
-					if (tsDiff < 0){
+					if (tsDiff <= 0){
 						operations.remove(i);
 						//max_index--;
 					}
