@@ -280,7 +280,7 @@ public class ServerData {
 	}
 	
 	public synchronized void execOperation(AddOperation receivedOp){
-		synchronized(logLock){
+
 		lsim.log(Level.FATAL, "Trying to add a recipe: "+receivedOp);
 		if (this.log.add(receivedOp)){
 			lsim.log(Level.FATAL, "Added to log:\n"+this.getLog());
@@ -289,11 +289,11 @@ public class ServerData {
 		} else {
 			lsim.log(Level.FATAL, "Not added to the log... WTF!");
 		}
-		}
+		
 	}
 	
 	public synchronized void execOperation(RemoveOperation receivedOp){
-		synchronized(logLock){
+
 		lsim.log(Level.FATAL,  "Trying to remove a recipe: "+receivedOp);
 		if (this.log.add(receivedOp)){
 			lsim.log(Level.FATAL, "Added to log:\n"+this.getLog());
@@ -302,7 +302,7 @@ public class ServerData {
 		}else {
 			lsim.log(Level.FATAL,  "Not added to the log... WTH!");
 			}
-		}
+		
 	}
 	
 	// ******************************

@@ -85,14 +85,15 @@ public class Log implements Serializable {
 		} else if (opHostIdOperations.isEmpty()) {
 			lastTimestampHostId = null;
 		} else {
+			lsim.log(Level.TRACE, "This list should be ordered!"+opHostIdOperations);
 			lastTimestampHostId = opHostIdOperations.get(opHostIdOperations.size() - 1).getTimestamp();
 		}
 
-		// Compare both timestamps. If the incoming operation timestamp is
-		// older, we add the operation into the logs
+		// Compare both timestamps. The new incoming operation timestamp must be the next in sequence
+
 		long tsDiff = opTimestamp.compare(lastTimestampHostId);
 
-		if (tsDiff >= 1 || (lastTimestampHostId == null && tsDiff == 0)) {
+		if (tsDiff == 1 || (lastTimestampHostId == null && tsDiff == 0)) {
 		//if ((lastTimestampHostId != null && tsDiff == 1 || lastTimestampHostId == null && tsDiff == 0)) {
 			//lsim.log(Level.DEBUG, "Inserting operation: " + op);
 			log.get(opHostId).add(op);
@@ -175,7 +176,6 @@ public class Log implements Serializable {
 					
 					if (tsDiff <= 0){
 						operations.remove(i);
-						//max_index--;
 					}
 					
 					
