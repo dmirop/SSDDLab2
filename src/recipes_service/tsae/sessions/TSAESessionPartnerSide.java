@@ -138,7 +138,9 @@ public class TSAESessionPartnerSide extends Thread{
 		            
 		            // Using synchronized to send the AddOperations first, then RemoveOperations and, finally, update the data structures
 		            synchronized(this.serverData){
-		            	
+		            	// No m'agrada. Ja sé que les recipes s'originen de manera aleatòria, però en un cas real no seria raro
+				// un usuari que fiqués una recipe, veies que s'habia equivocat, la borrés i la tornés a ficar.
+				// En aquest cas l'ordre seria rellevant
 		            	List<MessageOperation> add_operations = new Vector<MessageOperation>();
 		            	List<MessageOperation> remove_operations = new Vector<MessageOperation>();
 		            	
