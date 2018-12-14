@@ -66,8 +66,8 @@ public class Log implements Serializable {
 	 * @param op
 	 * @return true if op is inserted, false otherwise.
 	 */
-	public synchronized boolean add(Operation op) {
-		//lsim.log((Level.TRACE, "Inserting into Log the operation: " + op);
+	public boolean add(Operation op) {
+		//lsim.log(Level.TRACE, "Inserting into Log the operation: " + op);
 
 		// Get the HostId from the operation to insert
 		Timestamp opTimestamp = op.getTimestamp();
@@ -78,28 +78,21 @@ public class Log implements Serializable {
 		List<Operation> opHostIdOperations = log.get(opHostId);
 
 		// Retrieve the last timestamp in the list of Operations
-		Timestamp lastTimestampHostId;
+		Timestamp lastTimestampHostId = null;
 
-		if (opHostIdOperations == null) {
-			lastTimestampHostId = null;
-		} else if (opHostIdOperations.isEmpty()) {
-			lastTimestampHostId = null;
-		} else {
-			lsim.log(Level.TRACE, "This list should be ordered!"+opHostIdOperations);
+		if (!opHostIdOperations.isEmpty()) {
 			lastTimestampHostId = opHostIdOperations.get(opHostIdOperations.size() - 1).getTimestamp();
 		}
 
 		// Compare both timestamps. The new incoming operation timestamp must be the next in sequence
 
 		long tsDiff = opTimestamp.compare(lastTimestampHostId);
-
-		if (tsDiff == 1 || (lastTimestampHostId == null && tsDiff == 0)) {
-		//if ((lastTimestampHostId != null && tsDiff == 1 || lastTimestampHostId == null && tsDiff == 0)) {
-			//lsim.log(Level.DEBUG, "Inserting operation: " + op);
+		
+		// Add to log if it's the next element or if the log is empty for that host
+		if (lastTimestampHostId == null || tsDiff == 1) {
 			log.get(opHostId).add(op);
 			return true;
 		} else {
-			//lsim.log(Level.ERROR, "Insertion of operations " + op + " failed.");
 			return false;
 		}
 	}
@@ -112,7 +105,7 @@ public class Log implements Serializable {
 	 * @param sum
 	 * @return list of operations
 	 */
-	public synchronized List<Operation> listNewer(TimestampVector sum) {
+	public List<Operation> listNewer(TimestampVector sum) {
 
 		// Create an empty list using the Vector class that is already imported
 		List<Operation> missingOps = new Vector<Operation>();
@@ -142,13 +135,14 @@ public class Log implements Serializable {
 	 * 
 	 * @param ack: ackSummary.
 	 */
-	public synchronized void purgeLog(TimestampMatrix ack) {
+	public void purgeLog(TimestampMatrix ack) {
 		if (ack == null){
 			return;
 		}
-		
+			
 		//Get the minimum Vector from the received ack
 		TimestampVector minVector = ack.minTimestampVector();
+		
 		
 		if (minVector != null){
 			//Iterate through all entries in the local Log
@@ -190,7 +184,7 @@ public class Log implements Serializable {
 	 * equals
 	 */
 	@Override
-	public synchronized boolean equals(Object obj) {
+	public boolean equals(Object obj) {
 		// Check if obj is this same instance, if it's null or if shares the
 		// same class
 		if (this == obj) {

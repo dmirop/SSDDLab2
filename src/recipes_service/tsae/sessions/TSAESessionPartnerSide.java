@@ -58,9 +58,6 @@ public class TSAESessionPartnerSide extends Thread{
 	private Socket socket = null;
 	private ServerData serverData = null;
 	
-	//Lock to allow for interaction with ServerData
-		private final Object lock = new Object();
-	
 	public TSAESessionPartnerSide(Socket socket, ServerData serverData) {
 		super("TSAEPartnerSideThread");
 		this.socket = socket;
@@ -72,6 +69,7 @@ public class TSAESessionPartnerSide extends Thread{
 		Message msg = null;
 
 		int current_session_number = -1;
+		
 		try {
 			ObjectOutputStream_DS out = new ObjectOutputStream_DS(socket.getOutputStream());
 			ObjectInputStream_DS in = new ObjectInputStream_DS(socket.getInputStream());
@@ -87,12 +85,13 @@ public class TSAESessionPartnerSide extends Thread{
 				MessageAErequest OriginatorAEMsg = (MessageAErequest) msg;
 				
 				// Send operations
-
+				synchronized(serverData){
 				for (Operation op: serverData.getLog().listNewer(OriginatorAEMsg.getSummary())){
 					MessageOperation OpMsg = new MessageOperation(op);
 					OpMsg.setSessionNumber(current_session_number);
 					out.writeObject(OpMsg);
 					lsim.log(Level.TRACE, "[TSAESessionPartnerrSide] [session: "+current_session_number+"] sent message: "+OpMsg);
+				}
 				}
 				
 				// Send to originator: local's summary and ack				
@@ -101,12 +100,10 @@ public class TSAESessionPartnerSide extends Thread{
 				
 				
 				
-				// Using synchronized to make sure no other node interferes
-				synchronized(lock){		
-					localSummary = serverData.getSummary().clone();
-					localAck = serverData.getAck().clone();
-				}
+				// Using public methods with locks from ServerData
 				
+				localSummary = serverData.cloneSummary();
+				localAck = serverData.cloneAck();
 				
 				msg = new MessageAErequest(localSummary, localAck);
 				msg.setSessionNumber(current_session_number);
@@ -140,20 +137,21 @@ public class TSAESessionPartnerSide extends Thread{
 					List<MessageOperation> add_operations = new Vector<MessageOperation>();
 	            	List<MessageOperation> remove_operations = new Vector<MessageOperation>();
 	            	
-	            	for (MessageOperation partnerMessageOp : origin_operations){
+	            	
+	            	/*for (MessageOperation partnerMessageOp : origin_operations){
 	            		if (partnerMessageOp.getOperation().getType() == OperationType.ADD){
 	            			add_operations.add(partnerMessageOp);
 	            		} else {
 	            			remove_operations.add(partnerMessageOp);
 	            		}
-	            	}
+	            	}*/
 	            	
 	            		            	
 		            // Send the AddOperations first, then RemoveOperations and, finally, update the data structures
 
-	            	
+	            	synchronized(serverData){
 		            	
-		            	for (MessageOperation addMessageOp : add_operations){
+		            	/*for (MessageOperation addMessageOp : add_operations){
 		        
 		            		serverData.execOperation((AddOperation)addMessageOp.getOperation());
 		            	}
@@ -161,32 +159,38 @@ public class TSAESessionPartnerSide extends Thread{
 		            	for (MessageOperation removeMessageOp: remove_operations){
 		            		
 		            		serverData.execOperation((RemoveOperation)removeMessageOp.getOperation());
-		            	}
-		            	
-		           
-		            	synchronized(lock){
+		            	}*/
+	            		
+	            		for (MessageOperation partnerMessageOp: origin_operations){
+	            			if (partnerMessageOp.getOperation().getType() == OperationType.ADD){
+	            				serverData.execOperation((AddOperation)partnerMessageOp.getOperation());
+	            			}else{
+	            				serverData.execOperation((RemoveOperation)partnerMessageOp.getOperation());
+	            			}
+	            		}        	
 						
-		            	serverData.getSummary().updateMax(OriginatorAEMsg.getSummary());
+		            	//serverData.getSummary().updateMax(OriginatorAEMsg.getSummary());
 		            	
 		            	serverData.getAck().update(serverData.getId(), serverData.getSummary());
 		            	
 		            	serverData.getAck().updateMax(OriginatorAEMsg.getAck());
 		            	
-		            	serverData.getLog().purgeLog(serverData.getAck());
-		            	
-		            }
+		            	serverData.getLog().purgeLog(serverData.getAck());}
 				}
+		            	
+		           
+				
 				
 			}
 			socket.close();		
 		} catch (ClassNotFoundException e) {
 			// TODO Auto-generated catch block
-			//lsim.log(Level.FATAL, "[TSAESessionPartnerSide] [session: "+current_session_number+"]" + e.getMessage());
+			lsim.log(Level.FATAL, "[TSAESessionPartnerSide] [session: "+current_session_number+"]" + e.getMessage());
 			e.printStackTrace();
             System.exit(1);
 		}catch (IOException e) {
 	    }
 		
 		lsim.log(Level.TRACE, "[TSAESessionPartnerSide] [session: "+current_session_number+"] End TSAE session");
-	}
+		}
 }

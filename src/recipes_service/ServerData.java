@@ -45,43 +45,45 @@ import recipes_service.tsae.sessions.TSAESessionOriginatorSide;
 import recipes_service.data.RemoveOperation;
 
 /**
- * @author Joan-Manuel Marques
- * December 2012
+ * @author Joan-Manuel Marques December 2012
  *
  */
 public class ServerData {
 	// Needed for the logging system sgeag@2017
 	private transient LSimWorker lsim = LSimFactory.getWorkerInstance();
-	
+
 	// groupId
 	private String groupId;
-	
+
 	// server id
 	private String id;
-	
+
 	// sequence number of the last recipe timestamped by this server
-	private long seqnum=Timestamp.NULL_TIMESTAMP_SEQ_NUMBER; // sequence number (to timestamp)
+	private long seqnum = Timestamp.NULL_TIMESTAMP_SEQ_NUMBER; // sequence
+																// number (to
+																// timestamp)
 
 	// timestamp lock
 	private Object timestampLock = new Object();
-	
-	// log lock
-	private Object logLock = new Object();
-	
+	private Object datalock = new Object();
+
 	// TSAE data structures
 	private Log log = null;
 	private TimestampVector summary = null;
 	private TimestampMatrix ack = null;
-	
+
 	// recipes data structure
 	private Recipes recipes = new Recipes();
 
 	// number of TSAE sessions
-	int numSes = 1; // number of different partners that a server will contact for a TSAE session each time that TSAE timer (each sessionPeriod seconds) expires
+	int numSes = 1; // number of different partners that a server will contact
+					// for a TSAE session each time that TSAE timer (each
+					// sessionPeriod seconds) expires
 
-	// propDegree: (default value: 0) number of TSAE sessions done each time a new data is created
+	// propDegree: (default value: 0) number of TSAE sessions done each time a
+	// new data is created
 	int propDegree = 0;
-	
+
 	// Participating nodes
 	private Hosts participants;
 
@@ -97,50 +99,53 @@ public class ServerData {
 	// TODO: esborrar aquesta estructura de dades
 	// tombstones: timestamp of removed operations
 	List<Timestamp> tombstones = new Vector<Timestamp>();
-	
+
+	// List of pending RemoveOperations till we receive the AddOperation
+	private List<String> pendingRmRecipes = new Vector<String>();
+
 	// end: true when program should end; false otherwise
 	private boolean end;
 
-	public ServerData(String groupId){
+	public ServerData(String groupId) {
 		this.groupId = groupId;
 	}
-	
+
 	/**
 	 * Starts the execution
+	 * 
 	 * @param participantss
 	 */
-	public void startTSAE(Hosts participants){
+	public void startTSAE(Hosts participants) {
 		this.participants = participants;
 		this.log = new Log(participants.getIds());
 		this.summary = new TimestampVector(participants.getIds());
 		this.ack = new TimestampMatrix(participants.getIds());
-		
 
-		//  Sets the Timer for TSAE sessions
-	    tsae = new TSAESessionOriginatorSide(this);
+		// Sets the Timer for TSAE sessions
+		tsae = new TSAESessionOriginatorSide(this);
 		tsaeSessionTimer = new Timer();
 		tsaeSessionTimer.scheduleAtFixedRate(tsae, sessionDelay, sessionPeriod);
 	}
 
-	public void stopTSAEsessions(){
+	public void stopTSAEsessions() {
 		this.tsaeSessionTimer.cancel();
 	}
-	
-	public boolean end(){
+
+	public boolean end() {
 		return this.end;
 	}
-	
-	public void setEnd(){
+
+	public void setEnd() {
 		this.end = true;
 	}
 
 	// ******************************
 	// *** timestamps
 	// ******************************
-	private Timestamp nextTimestamp(){
+	private Timestamp nextTimestamp() {
 		Timestamp nextTimestamp = null;
-		synchronized (timestampLock){
-			if (seqnum == Timestamp.NULL_TIMESTAMP_SEQ_NUMBER){
+		synchronized (timestampLock) {
+			if (seqnum == Timestamp.NULL_TIMESTAMP_SEQ_NUMBER) {
 				seqnum = -1;
 			}
 			nextTimestamp = new Timestamp(id, ++seqnum);
@@ -153,185 +158,218 @@ public class ServerData {
 	// ******************************
 	public synchronized void addRecipe(String recipeTitle, String recipe) {
 
-		Timestamp timestamp= nextTimestamp();
+		Timestamp timestamp = nextTimestamp();
 		Recipe rcpe = new Recipe(recipeTitle, recipe, groupId, timestamp);
-		Operation op=new AddOperation(rcpe, timestamp);
+		Operation op = new AddOperation(rcpe, timestamp);
 
 		this.log.add(op);
 		this.summary.updateTimestamp(timestamp);
 		this.recipes.add(rcpe);
 	}
-	
-	public synchronized void removeRecipe(String recipeTitle){
-		
+
+	public synchronized void removeRecipe(String recipeTitle) {
+
 		Timestamp timestamp = nextTimestamp();
-		
+
 		Recipe rcpe = this.recipes.get(recipeTitle);
-		
+
 		Timestamp recipeTs = rcpe.getTimestamp();
-		
+
 		Operation op = new RemoveOperation(recipeTitle, recipeTs, timestamp);
-		
+
 		this.log.add(op);
 		this.summary.updateTimestamp(timestamp);
 		this.recipes.remove(recipeTitle);
-		
+
 	}
-	
 
 	// ****************************************************************************
-	// *** operations to get the TSAE data structures. Used to send to evaluation
+	// *** operations to get the TSAE data structures. Used to send to
+	// evaluation
 	// ****************************************************************************
 	public Log getLog() {
 		return log;
 	}
+
 	public TimestampVector getSummary() {
 		return summary;
 	}
+
 	public TimestampMatrix getAck() {
 		return ack;
 	}
-	public Recipes getRecipes(){
+
+	public Recipes getRecipes() {
 		return recipes;
 	}
 
 	// ******************************
 	// *** getters and setters
 	// ******************************
-	public String getGroupId(){
+	public String getGroupId() {
 		return this.groupId;
 	}
-	public void setId(String id){
-		this.id = id;		
+
+	public void setId(String id) {
+		this.id = id;
 	}
-	public String getId(){
+
+	public String getId() {
 		return this.id;
 	}
 
-	public int getNumberSessions(){
+	public int getNumberSessions() {
 		return numSes;
 	}
 
-	public void setNumberSessions(int numSes){
+	public void setNumberSessions(int numSes) {
 		this.numSes = numSes;
 	}
 
-	public int getPropagationDegree(){
+	public int getPropagationDegree() {
 		return this.propDegree;
 	}
 
-	public void setPropagationDegree(int propDegree){
+	public void setPropagationDegree(int propDegree) {
 		this.propDegree = propDegree;
 	}
 
 	public void setSessionDelay(long sessionDelay) {
 		this.sessionDelay = sessionDelay;
 	}
+
 	public void setSessionPeriod(long sessionPeriod) {
 		this.sessionPeriod = sessionPeriod;
 	}
-	public TSAESessionOriginatorSide getTSAESessionOriginatorSide(){
+
+	public TSAESessionOriginatorSide getTSAESessionOriginatorSide() {
 		return this.tsae;
 	}
-	
+
 	// ******************************
 	// *** methods to manipulate data
 	// ******************************
-	
+
+	public TimestampVector cloneSummary() {
+		synchronized (datalock) {
+			return summary.clone();
+		}
+	}
+
+	public synchronized TimestampMatrix cloneAck() {
+		synchronized (datalock) {
+			return ack.clone();
+		}
+	}
+
 	/**
-	 * Updates the summary of the server data with the TimestampVector sent by a node
-	 * @param tsVector TimestampVector from the node
+	 * Updates the summary of the server data with the TimestampVector sent by a
+	 * node
+	 * 
+	 * @param tsVector
+	 *            TimestampVector from the node
 	 */
-	public synchronized void updateSummary(TimestampVector tsVector){
+	public synchronized void updateSummary(TimestampVector tsVector) {
 		this.summary.updateMax(tsVector);
 	}
+
 	/**
 	 * Updates the ack Matrix with the TimestampMatrix sent by a node
+	 * 
 	 * @param tsMatrix
 	 */
-	public synchronized void updateAck(TimestampMatrix tsMatrix){
+	public synchronized void updateAck(TimestampMatrix tsMatrix) {
 		// Retrieve the local summary to update the ack Matrix
 		TimestampVector summary = this.getSummary();
 		this.ack.update(this.getId(), summary);
 		// Update the ack using Max
 		this.ack.updateMax(tsMatrix);
 	}
-	
+
 	/**
 	 * Purges the Log
 	 */
-	public synchronized void purgeLog(){
+	public synchronized void purgeLog() {
 		this.log.purgeLog(this.getAck());
 	}
-	
+
 	/**
 	 * Receives an operation from a node, logs it and executes it
+	 * 
 	 * @param receivedOp
 	 */
-	public synchronized void execOperation(Operation receivedOp){
-		if (this.log.add(receivedOp)){
-			if (receivedOp.getType() == OperationType.ADD){
-				this.recipes.add(((AddOperation)receivedOp).getRecipe());
-			} else if (receivedOp.getType() == OperationType.REMOVE){
-				this.recipes.remove(((RemoveOperation)receivedOp).getRecipeTitle());
+	public synchronized void execOperation(Operation receivedOp) {
+		if (this.log.add(receivedOp)) {
+			if (receivedOp.getType() == OperationType.ADD) {
+				this.recipes.add(((AddOperation) receivedOp).getRecipe());
+			} else if (receivedOp.getType() == OperationType.REMOVE) {
+				this.recipes.remove(((RemoveOperation) receivedOp).getRecipeTitle());
 			}
-			
+
 		}
 	}
-	
-	public synchronized void execOperation(AddOperation receivedOp){
 
-		lsim.log(Level.FATAL, "Trying to add a recipe: "+receivedOp);
-		if (this.log.add(receivedOp)){
-			lsim.log(Level.FATAL, "Added to log:\n"+this.getLog());
-			this.recipes.add(receivedOp.getRecipe());
-			lsim.log(Level.FATAL,  "Recipes list:\n"+this.getRecipes());
-		} else {
-			lsim.log(Level.FATAL, "Not added to the log... WTF!");
-		}
-		
-	}
-	
-	public synchronized void execOperation(RemoveOperation receivedOp){
-
-		lsim.log(Level.FATAL,  "Trying to remove a recipe: "+receivedOp);
-		if (this.log.add(receivedOp)){
-			lsim.log(Level.FATAL, "Added to log:\n"+this.getLog());
-			this.recipes.remove(receivedOp.getRecipeTitle());
-			lsim.log(Level.FATAL, "Recipes list:\n"+this.getRecipes());
-		}else {
-			lsim.log(Level.FATAL,  "Not added to the log... WTH!");
+	public synchronized void execOperation(AddOperation receivedOp) {
+		// Check if the received operation is newer
+		if (NewOp(receivedOp)) {
+			if (this.log.add(receivedOp)) {
+				if (!this.pendingRmRecipes.contains(receivedOp.getRecipe().getTitle())) {
+					this.recipes.add(receivedOp.getRecipe());
+				} else {
+					this.pendingRmRecipes.remove(receivedOp.getRecipe().getTitle());
+				}
+				this.summary.updateTimestamp(receivedOp.getTimestamp());
 			}
-		
+		}
 	}
-	
+
+	public synchronized void execOperation(RemoveOperation receivedOp) {
+		if (NewOp(receivedOp)) {
+			if (this.log.add(receivedOp)) {
+				if (this.recipes.contains(receivedOp.getRecipeTitle())) {
+					this.recipes.remove(receivedOp.getRecipeTitle());
+				} else {
+					this.pendingRmRecipes.add(receivedOp.getRecipeTitle());
+				}
+				this.summary.updateTimestamp(receivedOp.getTimestamp());
+			}
+		}
+	}
+
+	private synchronized boolean NewOp(Operation op) {
+		String node = op.getTimestamp().getHostid();
+		Timestamp lastTs = this.getSummary().getLast(node);
+		return (op.getTimestamp().compare(lastTs) > 0);
+	}
+
 	// ******************************
 	// *** other
 	// ******************************
-	
-	public List<Host> getRandomPartners(int num){
+
+	public List<Host> getRandomPartners(int num) {
 		return participants.getRandomPartners(num);
 	}
-	
+
 	/**
-	 * waits until the Server is ready to receive TSAE sessions from partner servers   
+	 * waits until the Server is ready to receive TSAE sessions from partner
+	 * servers
 	 */
-	public synchronized void waitServerConnected(){
-		while (!SimulationData.getInstance().isConnected()){
+	public synchronized void waitServerConnected() {
+		while (!SimulationData.getInstance().isConnected()) {
 			try {
 				wait();
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
-				//			e.printStackTrace();
+				// e.printStackTrace();
 			}
 		}
 	}
-	
+
 	/**
-	 * 	Once the server is connected notifies to ServerPartnerSide that it is ready
-	 *  to receive TSAE sessions from partner servers  
-	 */ 
-	public synchronized void notifyServerConnected(){
+	 * Once the server is connected notifies to ServerPartnerSide that it is
+	 * ready to receive TSAE sessions from partner servers
+	 */
+	public synchronized void notifyServerConnected() {
 		notifyAll();
 	}
 }
