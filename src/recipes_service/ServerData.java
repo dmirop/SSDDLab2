@@ -65,6 +65,7 @@ public class ServerData {
 
 	// timestamp lock
 	private Object timestampLock = new Object();
+	// data lock
 	private Object datalock = new Object();
 
 	// TSAE data structures
@@ -249,13 +250,21 @@ public class ServerData {
 	// ******************************
 	// *** methods to manipulate data
 	// ******************************
-
+	
+	/**
+	 * Clones the Summary in ServerData
+	 * @return Cloned Summary of ServerData
+	 */
 	public TimestampVector cloneSummary() {
 		synchronized (datalock) {
 			return summary.clone();
 		}
 	}
-
+	
+	/**
+	 * Clones the Ack in ServerData
+	 * @return Cloned Ack of ServerData
+	 */
 	public synchronized TimestampMatrix cloneAck() {
 		synchronized (datalock) {
 			return ack.clone();
@@ -263,79 +272,54 @@ public class ServerData {
 	}
 
 	/**
-	 * Updates the summary of the server data with the TimestampVector sent by a
-	 * node
-	 * 
-	 * @param tsVector
-	 *            TimestampVector from the node
+	 * Method that executes an AddOperation. A recipe is added if it isn't pending for removal
+	 * @param receivedOp Received AddOperation
 	 */
-	public synchronized void updateSummary(TimestampVector tsVector) {
-		this.summary.updateMax(tsVector);
-	}
-
-	/**
-	 * Updates the ack Matrix with the TimestampMatrix sent by a node
-	 * 
-	 * @param tsMatrix
-	 */
-	public synchronized void updateAck(TimestampMatrix tsMatrix) {
-		// Retrieve the local summary to update the ack Matrix
-		TimestampVector summary = this.getSummary();
-		this.ack.update(this.getId(), summary);
-		// Update the ack using Max
-		this.ack.updateMax(tsMatrix);
-	}
-
-	/**
-	 * Purges the Log
-	 */
-	public synchronized void purgeLog() {
-		this.log.purgeLog(this.getAck());
-	}
-
-	/**
-	 * Receives an operation from a node, logs it and executes it
-	 * 
-	 * @param receivedOp
-	 */
-	public synchronized void execOperation(Operation receivedOp) {
-		if (this.log.add(receivedOp)) {
-			if (receivedOp.getType() == OperationType.ADD) {
-				this.recipes.add(((AddOperation) receivedOp).getRecipe());
-			} else if (receivedOp.getType() == OperationType.REMOVE) {
-				this.recipes.remove(((RemoveOperation) receivedOp).getRecipeTitle());
-			}
-
-		}
-	}
-
 	public synchronized void execOperation(AddOperation receivedOp) {
 		// Check if the received operation is newer
 		if (NewOp(receivedOp)) {
+			//Get into log
 			if (this.log.add(receivedOp)) {
+				//Add in Recipes only if it isn't pending for removal
 				if (!this.pendingRmRecipes.contains(receivedOp.getRecipe().getTitle())) {
 					this.recipes.add(receivedOp.getRecipe());
 				} else {
 					this.pendingRmRecipes.remove(receivedOp.getRecipe().getTitle());
 				}
+				//Update the summary
 				this.summary.updateTimestamp(receivedOp.getTimestamp());
 			}
 		}
 	}
-
+	
+	/**
+	 * Method that executes a RemoveOperation. A recipe is removed if it exists in Recipes
+	 * If it doesn't exist, it is stored for later
+	 * @param receivedOp Received RemoveOperation
+	 */
 	public synchronized void execOperation(RemoveOperation receivedOp) {
+		// Check if the received operation is newer
 		if (NewOp(receivedOp)) {
+			//Get into log
 			if (this.log.add(receivedOp)) {
+				//Remove from Recipes if it exits
 				if (this.recipes.contains(receivedOp.getRecipeTitle())) {
 					this.recipes.remove(receivedOp.getRecipeTitle());
 				} else {
+					//Mark as pending if the recipe doesn't exist already
 					this.pendingRmRecipes.add(receivedOp.getRecipeTitle());
 				}
+				//Update the summary
 				this.summary.updateTimestamp(receivedOp.getTimestamp());
 			}
 		}
 	}
-
+	
+	/**
+	 * Method that evaluates if the sent operation is new or has been processed already
+	 * @param op Received Operation
+	 * @return true if op hasn't been processed
+	 */
 	private synchronized boolean NewOp(Operation op) {
 		String node = op.getTimestamp().getHostid();
 		Timestamp lastTs = this.getSummary().getLast(node);
