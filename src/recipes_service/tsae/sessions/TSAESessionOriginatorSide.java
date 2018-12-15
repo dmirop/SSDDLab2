@@ -58,9 +58,6 @@ public class TSAESessionOriginatorSide extends TimerTask {
 	private LSimWorker lsim = LSimFactory.getWorkerInstance();
 	private static AtomicInteger session_number = new AtomicInteger(0);
 
-	// Lock to allow for interaction with ServerData
-	private final Object lock = new Object();
-
 	private ServerData serverData;
 
 	public TSAESessionOriginatorSide(ServerData serverData) {

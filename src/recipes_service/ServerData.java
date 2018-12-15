@@ -32,7 +32,6 @@ import recipes_service.communication.Host;
 import recipes_service.communication.Hosts;
 import recipes_service.data.AddOperation;
 import recipes_service.data.Operation;
-import recipes_service.data.OperationType;
 import recipes_service.data.Recipe;
 import recipes_service.data.Recipes;
 import recipes_service.tsae.data_structures.Log;
